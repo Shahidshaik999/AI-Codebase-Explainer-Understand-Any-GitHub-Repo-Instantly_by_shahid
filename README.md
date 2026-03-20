@@ -29,6 +29,10 @@ Everything persists across tab switches. Analyzing a new repo resets the session
 
 ## Demo
 
+
+https://github.com/user-attachments/assets/b95d9341-e35b-4f33-9960-674cbbbdf85c
+
+
 ```
 Input:  https://github.com/owner/repo
 Output: Full AI analysis across 8 tabs in ~60 seconds
