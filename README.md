@@ -30,7 +30,11 @@ Everything persists across tab switches. Analyzing a new repo resets the session
 ## Demo
 
 
-https://github.com/user-attachments/assets/b95d9341-e35b-4f33-9960-674cbbbdf85c
+
+https://github.com/user-attachments/assets/3e5b669b-9a6c-466b-a63c-7d67635fbb78
+
+
+
 
 
 ```
