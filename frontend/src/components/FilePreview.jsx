@@ -156,7 +156,7 @@ export default function FilePreview({ loadingPath, onAskAboutFile }) {
   if (loadingPath) {
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-[400px] gap-3">
-        <span className="w-6 h-6 border-2 border-white/20 border-t-accent-blue rounded-full animate-spin" />
+        <span className="w-6 h-6 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
         <p className="text-xs text-white/40">Loading {loadingPath.split("/").pop()}…</p>
       </div>
     );
@@ -183,17 +183,21 @@ export default function FilePreview({ loadingPath, onAskAboutFile }) {
           <button
             onClick={handleExplainSelection}
             disabled={explaining}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
-                       bg-accent-blue text-white shadow-lg shadow-accent-blue/30
-                       hover:bg-blue-500 transition-all duration-150 whitespace-nowrap
-                       border border-blue-400/30"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 500,
+              background: "#7C3AED", color: "#fff", cursor: "pointer",
+              border: "1px solid rgba(255,255,255,0.12)",
+              boxShadow: "0 4px 16px rgba(124,58,237,0.35)",
+              transition: "all 0.15s", whiteSpace: "nowrap",
+            }}
           >
             {explaining
               ? <><span className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" /> Explaining…</>
               : <><span>🧠</span> Explain Selection</>}
           </button>
           {/* Arrow */}
-          <div className="w-2 h-2 bg-accent-blue rotate-45 mx-auto -mt-1 rounded-sm" />
+          <div style={{ width: 8, height: 8, background: "#7C3AED", transform: "rotate(45deg)", margin: "-4px auto 0", borderRadius: 2 }} />
         </div>
       )}
 
@@ -225,16 +229,28 @@ export default function FilePreview({ loadingPath, onAskAboutFile }) {
           <div className="flex items-center gap-1.5 shrink-0 ml-auto">
             {explaining && (
               <span className="text-[10px] text-white/40 flex items-center gap-1">
-                <span className="w-3 h-3 border border-white/20 border-t-accent-blue rounded-full animate-spin" />
+                <span className="w-3 h-3 border border-white/20 border-t-white/60 rounded-full animate-spin" />
                 Explaining…
               </span>
             )}
             {onAskAboutFile && (
               <button
                 onClick={() => onAskAboutFile(file_path)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium
-                           bg-accent-purple/15 text-accent-purple border border-accent-purple/25
-                           hover:bg-accent-purple/25 transition-all duration-150"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  padding: "5px 12px", borderRadius: 8, fontSize: 11, fontWeight: 500,
+                  background: "rgba(255,255,255,0.05)", color: "#9CA3AF",
+                  border: "1px solid rgba(255,255,255,0.10)", cursor: "pointer",
+                  transition: "all 0.15s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(255,255,255,0.09)";
+                  e.currentTarget.style.color = "#E5E7EB";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+                  e.currentTarget.style.color = "#9CA3AF";
+                }}
               >
                 💬 Ask about this file
               </button>
@@ -244,8 +260,8 @@ export default function FilePreview({ loadingPath, onAskAboutFile }) {
 
         {/* ── AI Summary ── */}
         {summary && (
-          <div className="flex items-start gap-3 px-4 py-3 border-b border-white/[0.06]
-                          bg-gradient-to-r from-accent-blue/5 to-transparent shrink-0">
+          <div className="flex items-start gap-3 px-4 py-3 border-b border-white/[0.06] shrink-0"
+               style={{ background: "rgba(255,255,255,0.02)" }}>
             <span className="text-sm shrink-0 mt-0.5">🧠</span>
             <p className="text-xs text-white/60 leading-relaxed">{summary}</p>
           </div>

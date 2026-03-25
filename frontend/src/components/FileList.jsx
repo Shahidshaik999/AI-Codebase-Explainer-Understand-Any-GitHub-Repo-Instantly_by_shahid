@@ -80,15 +80,22 @@ export default function FileList({ onNavigateToChat }) {
                 return (
                   <li key={file.path}>
                     <button onClick={() => handleFileClick(file.path)}
-                      className={["w-full flex items-center gap-2.5 p-2 rounded-xl text-left transition-all duration-150 group",
-                        isSelected ? "bg-accent-blue/10 border border-accent-blue/20" : "hover:bg-white/[0.04] border border-transparent"].join(" ")}>
+                      style={{
+                        width: "100%", display: "flex", alignItems: "center", gap: 10,
+                        padding: "7px 8px", borderRadius: 10, textAlign: "left",
+                        transition: "all 0.15s", cursor: "pointer",
+                        background: isSelected ? "rgba(124,58,237,0.08)" : "transparent",
+                        border: isSelected ? "1px solid rgba(124,58,237,0.25)" : "1px solid transparent",
+                      }}
+                      onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+                      onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}>
                       <span className="shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-bold font-mono"
                         style={{ background: meta.color + "18", color: meta.color, border: "1px solid " + meta.color + "30" }}>
                         {meta.short}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <p className={["text-xs font-mono truncate transition-colors",
-                          isSelected ? "text-accent-blue" : "text-white/70 group-hover:text-white/90"].join(" ")}>
+                        <p className="text-xs font-mono truncate transition-colors"
+                          style={{ color: isSelected ? "#C4B5FD" : "rgba(255,255,255,0.65)" }}>
                           {file.path.split("/").pop()}
                         </p>
                         <p className="text-[10px] text-white/30 truncate">{file.reason}</p>
@@ -103,11 +110,15 @@ export default function FileList({ onNavigateToChat }) {
           {explorerTab === "folders" && folderSummaries?.length > 0 && (
             <ul className="space-y-1 overflow-y-auto h-full scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
               {folderSummaries.map((folder) => (
-                <li key={folder.path}
-                  className="flex gap-3 p-2.5 rounded-xl border border-white/[0.06] hover:border-accent-blue/20 transition-all duration-150">
-                  <div className="w-px bg-gradient-to-b from-accent-blue to-accent-purple rounded-full shrink-0" />
+                <li key={folder.path} style={{
+                  display: "flex", gap: 10, padding: "8px 10px", borderRadius: 10,
+                  border: "1px solid rgba(255,255,255,0.06)", transition: "border-color 0.15s",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; }}>
+                  <div style={{ width: 2, background: "rgba(255,255,255,0.10)", borderRadius: 99, flexShrink: 0 }} />
                   <div className="min-w-0">
-                    <p className="text-xs font-mono text-accent-blue font-medium truncate">{folder.path}/</p>
+                    <p className="text-xs font-mono font-medium truncate" style={{ color: "#9CA3AF" }}>{folder.path}/</p>
                     <p className="text-[10px] text-white/40 mt-0.5 leading-relaxed line-clamp-2">{folder.summary}</p>
                     <p className="text-[10px] text-white/20 mt-0.5">{folder.file_count} files</p>
                   </div>

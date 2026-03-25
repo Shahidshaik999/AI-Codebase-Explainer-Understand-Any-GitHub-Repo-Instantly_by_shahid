@@ -12,49 +12,48 @@ import SystemDesign from "../components/SystemDesign";
 import { analyzeRepo } from "../services/api";
 
 const TABS = [
-  { id: "overview",  label: "Overview",      emoji: "📋", requiresResult: true },
-  { id: "files",     label: "Files",         emoji: "📁", requiresResult: true },
-  { id: "graph",     label: "Dep Graph",     emoji: "🕸️", requiresGraph: true  },
-  { id: "chat",      label: "Chat",          emoji: "💬", requiresResult: true },
-  { id: "whatif",    label: "What-If Lab",   emoji: "⚡", requiresRepo: true   },
-  { id: "history",   label: "Time Machine",  emoji: "🕰️", requiresRepo: true   },
-  { id: "flow",      label: "Flow",          emoji: "🔀", requiresRepo: true   },
-  { id: "sysdesign", label: "System Design", emoji: "🏗️", requiresRepo: true   },
+  { id: "overview",  label: "Overview",      requiresResult: true },
+  { id: "files",     label: "Files",         requiresResult: true },
+  { id: "graph",     label: "Dep Graph",     requiresGraph: true  },
+  { id: "chat",      label: "Chat",          requiresResult: true },
+  { id: "whatif",    label: "What-If",       requiresRepo: true   },
+  { id: "history",   label: "Time Machine",  requiresRepo: true   },
+  { id: "flow",      label: "Flow",          requiresRepo: true   },
+  { id: "sysdesign", label: "System Design", requiresRepo: true   },
 ];
 
-const LOADING_STEPS = [
-  { label: "Cloning repository…",   icon: "📦" },
-  { label: "Reading source files…", icon: "📂" },
-  { label: "Chunking code…",        icon: "✂️"  },
-  { label: "Running AI analysis…",  icon: "🤖" },
-  { label: "Generating insights…",  icon: "✨" },
+const STEPS = [
+  "Cloning repository",
+  "Parsing source files",
+  "Generating embeddings",
+  "Running AI analysis",
+  "Building insights",
 ];
 
 export default function Home() {
   const { state, dispatch } = useAnalysis();
   const { repoUrl, analysisData } = state;
 
-  const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState(null);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
-  const [loadStep, setLoadStep]   = useState(0);
+  const [loadStep, setLoadStep] = useState(0);
   const [chatPrefill, setChatPrefill] = useState("");
 
-  const handleNavigateToChat = (message) => {
-    setChatPrefill(message);
+  const handleNavigateToChat = (msg) => {
+    setChatPrefill(msg);
     setActiveTab("chat");
   };
 
   const handleAnalyze = async (url, mode, phase) => {
-    // Reset everything for the new repo
     dispatch({ type: "START_ANALYSIS", repoUrl: url, explainMode: mode });
     setLoading(true);
     setError(null);
     setActiveTab("overview");
     setLoadStep(0);
 
-    const interval = setInterval(() =>
-      setLoadStep((s) => Math.min(s + 1, LOADING_STEPS.length - 1)), 7000);
+    const iv = setInterval(() =>
+      setLoadStep((s) => Math.min(s + 1, STEPS.length - 1)), 7000);
 
     try {
       const data = await analyzeRepo(url, mode, phase);
@@ -63,7 +62,7 @@ export default function Home() {
     } catch (err) {
       setError(err.response?.data?.detail || err.message || "Analysis failed.");
     } finally {
-      clearInterval(interval);
+      clearInterval(iv);
       setLoading(false);
     }
   };
@@ -76,27 +75,46 @@ export default function Home() {
   });
 
   return (
-    <div className="min-h-screen bg-surface">
-      {/* ── Header ──────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-20 border-b border-white/[0.06] bg-surface/80 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent-blue to-accent-purple
-                          flex items-center justify-center text-sm
-                          shadow-[0_0_16px_rgba(59,130,246,0.4)] animate-glow">
-            🔍
+    <div className="min-h-screen" style={{ background: "#0B0F14" }}>
+
+      {/* ── Header ── */}
+      <header style={{
+        position: "sticky", top: 0, zIndex: 30,
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        background: "rgba(11,15,20,0.80)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+      }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px",
+                      height: 54, display: "flex", alignItems: "center", gap: 12 }}>
+          {/* Logo */}
+          <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+            <div style={{
+              width: 26, height: 26, borderRadius: 7,
+              background: "linear-gradient(135deg, #7C3AED, #5B21B6)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 13, boxShadow: "0 0 12px rgba(124,58,237,0.4)",
+            }}>✦</div>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "#E5E7EB", letterSpacing: "-0.02em" }}>
+              Codebase AI
+            </span>
           </div>
-          <div>
-            <h1 className="text-sm font-bold text-white leading-none tracking-tight">
-              AI Codebase Explainer
-            </h1>
-            <p className="text-xs text-white/40 mt-0.5">Understand any GitHub repo instantly</p>
-          </div>
+
+          {/* Active repo pill */}
           {repoUrl && (
-            <div className="ml-auto hidden md:flex items-center gap-2 bg-white/[0.04]
-                            border border-white/[0.08] rounded-lg px-3 py-1.5
-                            hover:border-white/[0.14] transition-all duration-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-accent-green animate-pulse" />
-              <span className="text-xs text-white/50 font-mono truncate max-w-xs">
+            <div style={{
+              marginLeft: "auto",
+              display: "flex", alignItems: "center", gap: 7,
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.07)",
+              borderRadius: 8, padding: "4px 12px",
+            }}>
+              <span style={{
+                width: 5, height: 5, borderRadius: "50%", background: "#10B981",
+                display: "inline-block", boxShadow: "0 0 6px rgba(16,185,129,0.6)",
+              }} />
+              <span style={{ fontSize: 11, color: "#6B7280", fontFamily: "JetBrains Mono, monospace",
+                             maxWidth: 300, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {repoUrl.replace("https://github.com/", "")}
               </span>
             </div>
@@ -104,73 +122,127 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 py-8 space-y-6">
-        <div className="animate-slide-up">
-          <RepoInput onAnalyze={handleAnalyze} loading={loading} currentUrl={repoUrl} />
+      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px", position: "relative", zIndex: 1 }}>
+
+        {/* ── Hero / Input ── */}
+        <div className="animate-slide-up" style={{
+          textAlign: "center",
+          paddingTop: analysisData ? 0 : 64,
+          paddingBottom: analysisData ? 24 : 48,
+          transition: "padding 0.4s ease",
+        }}>
+          {!analysisData && !loading && (
+            <>
+              <div style={{ marginBottom: 16 }}>
+                <span className="ai-label">✦ AI-Powered</span>
+              </div>
+              <h1 style={{
+                fontSize: 38, fontWeight: 700, color: "#F3F4F6",
+                letterSpacing: "-0.04em", marginBottom: 12, lineHeight: 1.15,
+              }}>
+                Understand any GitHub repo
+              </h1>
+              <p style={{ fontSize: 15, color: "#6B7280", marginBottom: 40, maxWidth: 440, margin: "0 auto 40px" }}>
+                Paste a URL. Get AI-powered architecture, chat, and insights in seconds.
+              </p>
+            </>
+          )}
+          <RepoInput onAnalyze={handleAnalyze} loading={loading} />
         </div>
 
-        {/* Error */}
+        {/* ── Error ── */}
         {error && (
-          <div className="card border-accent-red/25 bg-accent-red/5 flex items-start gap-3 animate-slide-up">
-            <span className="text-xl shrink-0">⚠️</span>
+          <div className="animate-fade-in" style={{
+            marginTop: 16, padding: "12px 16px", borderRadius: 10,
+            background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)",
+            display: "flex", gap: 10, alignItems: "flex-start",
+          }}>
+            <span style={{ color: "#EF4444", fontSize: 14 }}>⚠</span>
             <div>
-              <p className="text-sm font-semibold text-accent-red">Analysis failed</p>
-              <p className="text-xs text-red-400/70 mt-0.5">{error}</p>
+              <p style={{ fontSize: 13, fontWeight: 500, color: "#EF4444" }}>Analysis failed</p>
+              <p style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>{error}</p>
             </div>
           </div>
         )}
 
-        {/* Loading */}
+        {/* ── Step Loader ── */}
         {loading && (
-          <div className="card animate-slide-up space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="relative w-10 h-10 shrink-0">
-                <div className="absolute inset-0 rounded-full border-2 border-accent-blue/15" />
-                <div className="absolute inset-0 rounded-full border-2 border-t-accent-blue border-r-accent-purple animate-spin" />
-                <div className="absolute inset-1 rounded-full border border-accent-purple/20 animate-spin"
-                     style={{ animationDirection: "reverse", animationDuration: "1.5s" }} />
+          <div className="animate-fade-in card" style={{ marginTop: 20 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              {/* Steps */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {STEPS.map((step, i) => {
+                  const done    = i < loadStep;
+                  const current = i === loadStep;
+                  return (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      {/* Icon */}
+                      <div style={{
+                        width: 24, height: 24, borderRadius: "50%", flexShrink: 0,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        background: done ? "#7C3AED" : current ? "rgba(124,58,237,0.15)" : "rgba(255,255,255,0.04)",
+                        border: `1px solid ${done ? "#7C3AED" : current ? "rgba(124,58,237,0.4)" : "rgba(255,255,255,0.07)"}`,
+                        transition: "all 0.4s",
+                      }}>
+                        {done
+                          ? <span style={{ fontSize: 11, color: "#fff" }}>✓</span>
+                          : current
+                            ? <span style={{
+                                width: 8, height: 8, borderRadius: "50%",
+                                background: "#7C3AED", display: "block",
+                                animation: "pulse 1.2s ease-in-out infinite",
+                              }} />
+                            : <span style={{ width: 6, height: 6, borderRadius: "50%",
+                                             background: "rgba(255,255,255,0.1)", display: "block" }} />
+                        }
+                      </div>
+                      <span style={{
+                        fontSize: 13,
+                        color: done ? "#6B7280" : current ? "#E5E7EB" : "#374151",
+                        fontWeight: current ? 500 : 400,
+                        transition: "color 0.3s",
+                      }}>
+                        {step}
+                        {current && <span style={{ color: "#7C3AED" }}>…</span>}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-white animate-shimmer">
-                  {LOADING_STEPS[loadStep].icon} {LOADING_STEPS[loadStep].label}
-                </p>
-                <div className="mt-2.5 h-1 bg-white/[0.06] rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-accent-blue to-accent-purple rounded-full
-                               transition-all duration-[6s] ease-linear shadow-[0_0_8px_rgba(59,130,246,0.5)]"
-                    style={{ width: `${((loadStep + 1) / LOADING_STEPS.length) * 100}%` }}
-                  />
-                </div>
-                <div className="flex gap-1 mt-2">
-                  {LOADING_STEPS.map((_, i) => (
-                    <div key={i}
-                      className={`h-0.5 flex-1 rounded-full transition-all duration-500
-                        ${i <= loadStep ? "bg-accent-blue" : "bg-white/[0.06]"}`} />
-                  ))}
-                </div>
+              {/* Progress bar */}
+              <div style={{ height: 2, background: "rgba(255,255,255,0.05)", borderRadius: 2, overflow: "hidden" }}>
+                <div style={{
+                  height: "100%", background: "#7C3AED", borderRadius: 2,
+                  width: `${((loadStep + 1) / STEPS.length) * 100}%`,
+                  transition: "width 6s linear",
+                }} />
               </div>
+              <p style={{ fontSize: 12, color: "#4B5563" }}>This may take 30–90 seconds for large repos.</p>
             </div>
-            <p className="text-xs text-white/30">This may take 30–90 seconds for large repos.</p>
           </div>
         )}
 
-        {/* Tabs */}
+        {/* ── Tabs ── */}
         {visibleTabs.length > 0 && !loading && (
-          <div className="animate-slide-up space-y-6">
-            <div className="flex gap-1 flex-wrap p-1 bg-white/[0.03] border border-white/[0.06]
-                            rounded-2xl w-fit shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+          <div className="animate-slide-up" style={{ marginTop: 28 }}>
+            {/* Tab bar */}
+            <div style={{
+              display: "flex", gap: 24, alignItems: "center",
+              borderBottom: "1px solid rgba(255,255,255,0.07)",
+              marginBottom: 24, overflowX: "auto",
+            }}>
               {visibleTabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={activeTab === tab.id ? "tab-pill-active" : "tab-pill-inactive"}
+                  className={`tab-underline${activeTab === tab.id ? " active" : ""}`}
                 >
-                  <span>{tab.emoji}</span>
-                  <span>{tab.label}</span>
+                  {tab.label}
                 </button>
               ))}
             </div>
 
+            {/* Tab content */}
             <div className="animate-fade-in" key={activeTab}>
               {activeTab === "overview"  && <SummaryCard />}
               {activeTab === "files"     && <FileList onNavigateToChat={handleNavigateToChat} />}

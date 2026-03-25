@@ -115,17 +115,24 @@ export default function FlowGraph() {
     <div className="space-y-4 animate-slide-up">
       <div className="card flex items-center gap-4 flex-wrap">
         <div className="flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-accent-green/10 border border-accent-green/20
-                          flex items-center justify-center text-lg shrink-0">🔀</div>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.18)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 16, flexShrink: 0,
+          }}>🔀</div>
           <div>
             <h3 className="font-bold text-white">Execution Flow Simulator</h3>
-            <p className="text-xs text-white/35 mt-0.5">AST-extracted function/class call graph</p>
+            <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>AST-extracted function/class call graph</p>
           </div>
         </div>
         <div className="flex items-center gap-2 ml-auto flex-wrap">
           {flowData && (
-            <span className="text-xs text-accent-green bg-accent-green/10 border border-accent-green/20
-                             px-2 py-1 rounded-lg">✓ Already Loaded</span>
+            <span style={{
+              fontSize: 11, color: "#34d399",
+              background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.20)",
+              padding: "3px 10px", borderRadius: 8,
+            }}>✓ Already Loaded</span>
           )}
           <div className="flex gap-1 bg-white/[0.03] p-0.5 rounded-xl border border-white/[0.06]">
             {["all", "file", "function", "class"].map((t) => (
@@ -144,7 +151,10 @@ export default function FlowGraph() {
       </div>
 
       {error && (
-        <div className="card border-accent-red/20 bg-accent-red/5 text-accent-red text-sm">
+        <div style={{
+          padding: "12px 16px", borderRadius: 12, fontSize: 13,
+          background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)", color: "#EF4444",
+        }}>
           <strong>Error:</strong> {error}
         </div>
       )}
@@ -156,7 +166,7 @@ export default function FlowGraph() {
               <span className="badge">{flowData.graph.nodes.length} nodes</span>
               <span className="badge">{flowData.graph.edges.length} edges</span>
               {flowData.graph.entry_point && (
-                <span className="badge text-accent-blue animate-glow">
+                <span className="badge" style={{ color: "#60a5fa", borderColor: "rgba(96,165,250,0.25)", background: "rgba(96,165,250,0.08)" }}>
                   Entry: {flowData.graph.entry_point.split("::").pop()}
                 </span>
               )}
@@ -169,10 +179,10 @@ export default function FlowGraph() {
                 </span>
               ))}
               <span className="flex items-center gap-1.5 text-xs text-white/40">
-                <span className="w-4 h-px bg-accent-green inline-block" /> call
+                <span className="w-4 h-px inline-block" style={{ background: "#34d399" }} /> call
               </span>
               <span className="flex items-center gap-1.5 text-xs text-white/40">
-                <span className="w-4 h-px bg-accent-yellow inline-block" /> inherit
+                <span className="w-4 h-px inline-block" style={{ background: "#f59e0b" }} /> inherit
               </span>
             </div>
           </div>

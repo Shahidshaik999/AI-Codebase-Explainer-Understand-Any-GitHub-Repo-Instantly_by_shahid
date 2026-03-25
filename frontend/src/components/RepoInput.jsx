@@ -1,99 +1,125 @@
 import { useState } from "react";
 import { useAnalysis } from "../context/AnalysisContext";
 
-const PHASE_OPTIONS = [
-  { value: 1, label: "Phase 1 — MVP" },
-  { value: 2, label: "Phase 2 — Smart (embeddings)" },
-  { value: 3, label: "Phase 3 — Visualization" },
+const PHASES = [
+  { value: 1, label: "MVP" },
+  { value: 2, label: "Smart" },
+  { value: 3, label: "Full" },
 ];
 
 export default function RepoInput({ onAnalyze, loading }) {
   const { state } = useAnalysis();
-  const [url, setUrl] = useState(state.repoUrl || "");
-  const [mode, setMode] = useState(state.explainMode || "senior");
+  const [url,   setUrl]   = useState(state.repoUrl || "");
+  const [mode,  setMode]  = useState(state.explainMode || "senior");
   const [phase, setPhase] = useState(1);
 
-  const handleSubmit = (e) => {
+  const submit = (e) => {
     e.preventDefault();
     if (url.trim()) onAnalyze(url.trim(), mode, phase);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="card space-y-5">
-      <div>
-        <h2 className="text-lg font-bold text-white tracking-tight">Analyze a GitHub Repository</h2>
-        <p className="text-xs text-gray-600 mt-1">Paste any public GitHub URL to get AI-powered insights</p>
-      </div>
-
-      {/* URL input with glow wrapper */}
-      <div className="flex gap-3">
-        <div className="relative flex-1 group">
-          {/* Gradient border glow on focus */}
-          <div className="absolute -inset-px rounded-xl bg-gradient-brand opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 blur-sm" />
-          <div className="relative flex items-center">
-            <span className="absolute left-4 text-gray-600 text-sm">🔗</span>
-            <input
-              type="url"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://github.com/owner/repo"
-              required
-              className="input pl-10 relative"
-            />
-          </div>
-        </div>
-        <button type="submit" disabled={loading} className="btn-primary min-w-[120px]">
-          {loading ? (
-            <span className="flex items-center gap-2">
-              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Analyzing…
-            </span>
-          ) : (
-            <>
-              <span>✨</span> Analyze
-            </>
-          )}
+    <form onSubmit={submit} style={{ width: "100%", maxWidth: 680, margin: "0 auto" }}>
+      {/* Main input row — no card box */}
+      <div style={{ position: "relative", display: "flex", gap: 8, alignItems: "center" }}>
+        {/* Prefix */}
+        <span style={{
+          position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)",
+          fontSize: 13, color: "#374151", fontFamily: "JetBrains Mono, monospace",
+          pointerEvents: "none", userSelect: "none", zIndex: 1,
+        }}>
+          github.com/
+        </span>
+        <input
+          type="text"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="owner / repository"
+          required
+          className="hero-input"
+          style={{ paddingLeft: 104, paddingRight: 130 }}
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          className="btn-primary"
+          style={{
+            position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)",
+            padding: "8px 18px", fontSize: 13,
+          }}
+        >
+          {loading
+            ? <><Spin /> Analyzing</>
+            : "Analyze →"
+          }
         </button>
       </div>
 
-      {/* Options row */}
-      <div className="flex flex-wrap gap-5 items-center pt-1 border-t border-white/[0.06]">
-        {/* Explain mode */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500">Explain as:</span>
-          <div className="flex gap-1 bg-white/[0.04] p-0.5 rounded-lg border border-white/[0.06]">
+      {/* Options row — minimal, centered */}
+      <div style={{
+        display: "flex", justifyContent: "center", gap: 20,
+        marginTop: 14, alignItems: "center", flexWrap: "wrap",
+      }}>
+        {/* Mode */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 11, color: "#4B5563" }}>Mode</span>
+          <div style={{
+            display: "flex", gap: 1,
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.07)",
+            borderRadius: 8, padding: 2,
+          }}>
             {["beginner", "senior"].map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setMode(m)}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition-all duration-200
-                  ${mode === m
-                    ? "bg-gradient-brand text-white shadow-sm"
-                    : "text-gray-500 hover:text-gray-300"}`}
-              >
-                {m === "beginner" ? "Beginner" : "Senior Dev"}
+              <button key={m} type="button" onClick={() => setMode(m)} style={{
+                padding: "3px 10px", borderRadius: 6, fontSize: 11, fontWeight: 500,
+                border: "none", cursor: "pointer", transition: "all 0.15s",
+                background: mode === m ? "#7C3AED" : "transparent",
+                color: mode === m ? "#fff" : "#6B7280",
+              }}>
+                {m === "beginner" ? "Beginner" : "Senior"}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Phase selector */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500">Phase:</span>
-          <select
-            value={phase}
-            onChange={(e) => setPhase(Number(e.target.value))}
-            className="bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-1.5
-                       text-gray-300 text-xs focus:outline-none focus:border-accent-blue/50
-                       transition-colors cursor-pointer"
-          >
-            {PHASE_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value} className="bg-surface-card">{o.label}</option>
+        {/* Divider */}
+        <span style={{ width: 1, height: 14, background: "rgba(255,255,255,0.07)" }} />
+
+        {/* Depth */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 11, color: "#4B5563" }}>Depth</span>
+          <div style={{
+            display: "flex", gap: 1,
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.07)",
+            borderRadius: 8, padding: 2,
+          }}>
+            {PHASES.map((p) => (
+              <button key={p.value} type="button" onClick={() => setPhase(p.value)} style={{
+                padding: "3px 10px", borderRadius: 6, fontSize: 11, fontWeight: 500,
+                border: "none", cursor: "pointer", transition: "all 0.15s",
+                background: phase === p.value ? "#7C3AED" : "transparent",
+                color: phase === p.value ? "#fff" : "#6B7280",
+              }}>
+                {p.label}
+              </button>
             ))}
-          </select>
+          </div>
         </div>
       </div>
     </form>
+  );
+}
+
+function Spin() {
+  return (
+    <span style={{
+      width: 12, height: 12,
+      border: "2px solid rgba(255,255,255,0.3)",
+      borderTopColor: "#fff",
+      borderRadius: "50%",
+      display: "inline-block",
+      animation: "spin 0.8s linear infinite",
+    }} />
   );
 }

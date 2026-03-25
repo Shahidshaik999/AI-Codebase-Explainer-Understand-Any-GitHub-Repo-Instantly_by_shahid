@@ -6,13 +6,13 @@ export default function HistoryTimeline() {
   const { state, dispatch } = useAnalysis();
   const { repoUrl, explainMode, historyData } = state;
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState(null);
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState(null);
   const [expanded, setExpanded] = useState(null);
-  const [limit, setLimit]     = useState(10);
+  const [limit,    setLimit]    = useState(10);
 
   const load = async () => {
-    if (historyData) return; // already loaded — skip API call
+    if (historyData) return;
     setLoading(true); setError(null);
     try {
       const data = await getRepoHistory(repoUrl, limit, explainMode);
@@ -24,132 +24,152 @@ export default function HistoryTimeline() {
     }
   };
 
-  const data = historyData;
-
   return (
-    <div className="space-y-4 animate-slide-up">
-      <div className="card flex items-center gap-4 flex-wrap">
-        <div className="flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-accent-purple/10 border border-accent-purple/20
-                          flex items-center justify-center text-lg shrink-0">🕰️</div>
-          <div>
-            <h3 className="font-bold text-white">Codebase Time Machine</h3>
-            <p className="text-xs text-white/35 mt-0.5">AI-explained commit history</p>
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }} className="animate-slide-up">
+
+      {/* Controls */}
+      <div className="card" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <div style={{ flex: 1 }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: "#E5E7EB" }}>Time Machine</p>
+          <p style={{ fontSize: 11, color: "#4B5563", marginTop: 2 }}>AI-explained commit history</p>
+        </div>
+        {!historyData && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 12, color: "#4B5563" }}>Commits</span>
+            <select value={limit} onChange={(e) => setLimit(Number(e.target.value))} style={{
+              background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
+              borderRadius: 8, padding: "4px 10px", fontSize: 12, color: "#9CA3AF",
+              cursor: "pointer", outline: "none",
+            }}>
+              {[5, 10, 15, 20].map((n) => (
+                <option key={n} value={n} style={{ background: "#111827" }}>{n}</option>
+              ))}
+            </select>
           </div>
-        </div>
-        <div className="flex items-center gap-3 ml-auto">
-          {data && (
-            <span className="text-xs text-accent-green bg-accent-green/10 border border-accent-green/20
-                             px-2 py-1 rounded-lg">✓ Already Loaded</span>
-          )}
-          {!data && (
-            <>
-              <label className="text-xs text-white/40">Commits:</label>
-              <select value={limit} onChange={(e) => setLimit(Number(e.target.value))}
-                className="bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-1.5
-                           text-xs text-white/70 focus:outline-none focus:border-accent-blue/50
-                           hover:border-white/[0.15] transition-colors cursor-pointer">
-                {[5, 10, 15, 20].map((n) => <option key={n} value={n} className="bg-[#111827]">{n}</option>)}
-              </select>
-            </>
-          )}
-          <button onClick={load} disabled={loading || !!data} className="btn-primary text-sm">
-            {loading
-              ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Loading…</>
-              : data ? "🕰️ Loaded" : "🕰️ Load History"}
-          </button>
-        </div>
+        )}
+        {historyData
+          ? <span className="badge-green">✓ Loaded</span>
+          : (
+            <button onClick={load} disabled={loading} className="btn-primary">
+              {loading ? <><Spin /> Loading…</> : "Load History"}
+            </button>
+          )
+        }
       </div>
 
       {error && (
-        <div className="card border-accent-red/20 bg-accent-red/5 text-accent-red text-sm">
-          <strong>Error:</strong> {error}
+        <div style={{ padding: "10px 14px", borderRadius: 10, fontSize: 13,
+                      background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)", color: "#EF4444" }}>
+          {error}
         </div>
       )}
 
-      {data?.overall_evolution && (
-        <div className="card border-accent-purple/20 bg-gradient-to-br from-accent-purple/8 to-transparent animate-slide-up">
-          <div className="flex items-start gap-3">
-            <span className="text-2xl shrink-0">🧬</span>
-            <div>
-              <h4 className="text-sm font-semibold text-accent-purple mb-2">Repository Evolution</h4>
-              <p className="text-sm text-white/70 leading-relaxed">{data.overall_evolution}</p>
-              <p className="text-xs text-white/30 mt-2">{data.total_commits_fetched} commits analyzed</p>
-            </div>
-          </div>
+      {/* Evolution summary */}
+      {historyData?.overall_evolution && (
+        <div style={{
+          padding: "16px 18px", borderRadius: 12,
+          background: "rgba(124,58,237,0.06)", border: "1px solid rgba(124,58,237,0.2)",
+        }} className="animate-slide-up">
+          <p className="section-label" style={{ marginBottom: 8, color: "#7C3AED" }}>Repository Evolution</p>
+          <p style={{ fontSize: 13, color: "#9CA3AF", lineHeight: 1.7 }}>{historyData.overall_evolution}</p>
+          <p style={{ fontSize: 11, color: "#4B5563", marginTop: 8 }}>
+            {historyData.total_commits_fetched} commits analyzed
+          </p>
         </div>
       )}
 
-      {data?.commits?.length > 0 && (
-        <div className="relative animate-slide-up">
-          <div className="absolute left-[19px] top-4 bottom-4 w-px
-                          bg-gradient-to-b from-accent-blue/50 via-accent-purple/25 to-transparent" />
-          <div className="space-y-3 stagger">
-            {data.commits.map((commit, i) => (
-              <div key={commit.sha} className="relative pl-11 animate-slide-up"
-                   style={{ animationDelay: `${i * 40}ms` }}>
-                <div className="absolute left-3 top-4 w-4 h-4 rounded-full
-                                bg-gradient-to-br from-accent-blue to-accent-purple
-                                border-2 border-surface z-10
-                                shadow-[0_0_8px_rgba(59,130,246,0.5)]
-                                transition-all duration-200 hover:scale-125" />
+      {/* Timeline */}
+      {historyData?.commits?.length > 0 && (
+        <div style={{ position: "relative" }} className="animate-slide-up">
+          {/* Vertical line */}
+          <div style={{
+            position: "absolute", left: 11, top: 8, bottom: 8, width: 1,
+            background: "linear-gradient(to bottom, rgba(124,58,237,0.4), rgba(255,255,255,0.04))",
+          }} />
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {historyData.commits.map((commit, i) => (
+              <div key={commit.sha} style={{ paddingLeft: 32, position: "relative" }}>
+                {/* Dot */}
+                <div style={{
+                  position: "absolute", left: 6, top: 16,
+                  width: 12, height: 12, borderRadius: "50%",
+                  background: "#7C3AED", border: "2px solid #0B0F14",
+                  boxShadow: "0 0 6px rgba(124,58,237,0.5)",
+                }} />
 
                 <div
-                  className={`card cursor-pointer transition-all duration-200
-                    hover:border-white/[0.15] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(59,130,246,0.1)]
-                    ${expanded === commit.sha ? "border-accent-blue/25 bg-accent-blue/5" : ""}`}
+                  className="card"
+                  style={{ cursor: "pointer", transition: "all 0.15s",
+                           borderColor: expanded === commit.sha ? "rgba(124,58,237,0.3)" : undefined }}
                   onClick={() => setExpanded(expanded === commit.sha ? null : commit.sha)}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = expanded === commit.sha ? "rgba(124,58,237,0.3)" : "rgba(255,255,255,0.07)"; }}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-white/90 truncate">{commit.message}</p>
-                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                        <span className="text-xs font-mono text-accent-blue bg-accent-blue/10
-                                         border border-accent-blue/20 px-2 py-0.5 rounded-md">
-                          {commit.short_sha}
-                        </span>
-                        <span className="text-xs text-white/40">{commit.author}</span>
-                        <span className="text-white/20">·</span>
-                        <span className="text-xs text-white/30">{commit.date}</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 13, color: "#E5E7EB", fontWeight: 500,
+                                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {commit.message}
+                      </p>
+                      <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap", alignItems: "center" }}>
+                        <span style={{
+                          fontSize: 11, fontFamily: "JetBrains Mono, monospace",
+                          padding: "1px 7px", borderRadius: 5,
+                          background: "rgba(124,58,237,0.1)", border: "1px solid rgba(124,58,237,0.2)",
+                          color: "#A78BFA",
+                        }}>{commit.short_sha}</span>
+                        <span style={{ fontSize: 11, color: "#6B7280" }}>{commit.author}</span>
+                        <span style={{ fontSize: 11, color: "#4B5563" }}>{commit.date}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div style={{ display: "flex", gap: 6, flexShrink: 0, alignItems: "center" }}>
                       {commit.insertions > 0 && (
-                        <span className="text-xs font-mono text-accent-green bg-accent-green/10
-                                         border border-accent-green/20 px-2 py-0.5 rounded-md">
+                        <span style={{ fontSize: 11, fontFamily: "JetBrains Mono, monospace",
+                                       color: "#10B981", padding: "1px 6px", borderRadius: 5,
+                                       background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
                           +{commit.insertions}
                         </span>
                       )}
                       {commit.deletions > 0 && (
-                        <span className="text-xs font-mono text-accent-red bg-accent-red/10
-                                         border border-accent-red/20 px-2 py-0.5 rounded-md">
+                        <span style={{ fontSize: 11, fontFamily: "JetBrains Mono, monospace",
+                                       color: "#EF4444", padding: "1px 6px", borderRadius: 5,
+                                       background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
                           -{commit.deletions}
                         </span>
                       )}
-                      <span className="text-white/30 text-xs transition-transform duration-200"
-                            style={{ transform: expanded === commit.sha ? "rotate(180deg)" : "none" }}>▼</span>
+                      <span style={{ fontSize: 10, color: "#4B5563",
+                                     transform: expanded === commit.sha ? "rotate(180deg)" : "none",
+                                     transition: "transform 0.2s", display: "inline-block" }}>▼</span>
                     </div>
                   </div>
 
                   {expanded === commit.sha && (
-                    <div className="mt-4 pt-4 border-t border-white/[0.06] space-y-3 animate-fade-in">
+                    <div className="animate-fade-in" style={{
+                      marginTop: 12, paddingTop: 12,
+                      borderTop: "1px solid rgba(255,255,255,0.06)",
+                    }}>
                       {commit.ai_insight && (
-                        <div className="bg-accent-blue/5 border border-accent-blue/15 rounded-xl px-4 py-3">
-                          <p className="text-xs text-accent-blue font-semibold mb-1.5">✨ AI Insight</p>
-                          <p className="text-sm text-white/70 leading-relaxed">{commit.ai_insight}</p>
+                        <div style={{
+                          padding: "10px 12px", borderRadius: 8, marginBottom: 10,
+                          background: "rgba(124,58,237,0.06)", border: "1px solid rgba(124,58,237,0.15)",
+                        }}>
+                          <p style={{ fontSize: 11, fontWeight: 600, color: "#7C3AED", marginBottom: 6 }}>AI Insight</p>
+                          <p style={{ fontSize: 12, color: "#9CA3AF", lineHeight: 1.6 }}>{commit.ai_insight}</p>
                         </div>
                       )}
                       {commit.files_changed?.length > 0 && (
                         <div>
-                          <p className="text-xs text-white/30 mb-2">Files changed ({commit.files_changed.length}):</p>
-                          <div className="flex flex-wrap gap-1.5">
+                          <p style={{ fontSize: 11, color: "#4B5563", marginBottom: 6 }}>
+                            Files changed ({commit.files_changed.length})
+                          </p>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                             {commit.files_changed.map((f) => (
-                              <span key={f}
-                                className="text-xs font-mono text-white/50 bg-white/[0.04]
-                                           border border-white/[0.08] px-2 py-0.5 rounded-md
-                                           hover:text-white/70 hover:border-white/[0.15] transition-colors">
-                                {f}
-                              </span>
+                              <span key={f} style={{
+                                fontSize: 11, fontFamily: "JetBrains Mono, monospace",
+                                padding: "2px 8px", borderRadius: 5, color: "#6B7280",
+                                background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
+                              }}>{f}</span>
                             ))}
                           </div>
                         </div>
@@ -164,4 +184,12 @@ export default function HistoryTimeline() {
       )}
     </div>
   );
+}
+
+function Spin() {
+  return <span style={{
+    width: 12, height: 12, border: "2px solid rgba(255,255,255,0.3)",
+    borderTopColor: "#fff", borderRadius: "50%", display: "inline-block",
+    animation: "spin 0.8s linear infinite",
+  }} />;
 }

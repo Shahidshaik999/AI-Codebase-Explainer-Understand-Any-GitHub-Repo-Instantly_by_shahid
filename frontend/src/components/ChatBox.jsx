@@ -6,33 +6,22 @@ export default function ChatBox({ prefillMessage }) {
   const { state, dispatch } = useAnalysis();
   const { repoUrl, explainMode, chatHistory: messages } = state;
 
-  // Seed the welcome message only if history is empty
-  const displayMessages = messages.length === 0
-    ? [{ role: "assistant", content: "Ask me anything about this repository — architecture, flows, specific files, or design decisions." }]
-    : messages;
+  const welcome = { role: "assistant", content: "Ask me anything about this repository — architecture, flows, specific files, or design decisions." };
+  const display = messages.length === 0 ? [welcome] : messages;
 
-  const [input, setInput]     = useState(prefillMessage || "");
+  const [input,   setInput]   = useState(prefillMessage || "");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
 
-  // When prefillMessage changes (e.g. from "Ask about this file"), update input
-  useEffect(() => {
-    if (prefillMessage) setInput(prefillMessage);
-  }, [prefillMessage]);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
+  useEffect(() => { if (prefillMessage) setInput(prefillMessage); }, [prefillMessage]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
 
   const send = async () => {
     const text = input.trim();
     if (!text || loading) return;
-
-    const userMsg = { role: "user", content: text };
-    dispatch({ type: "APPEND_CHAT", message: userMsg });
+    dispatch({ type: "APPEND_CHAT", message: { role: "user", content: text } });
     setInput("");
     setLoading(true);
-
     try {
       const { answer, sources } = await chatWithRepo(repoUrl, text, messages, explainMode);
       dispatch({ type: "APPEND_CHAT", message: { role: "assistant", content: answer, sources } });
@@ -46,51 +35,70 @@ export default function ChatBox({ prefillMessage }) {
     }
   };
 
-  const handleKey = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
-  };
+  const onKey = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } };
 
   return (
-    <div className="card flex flex-col animate-slide-up" style={{ height: 560 }}>
+    <div style={{
+      display: "flex", flexDirection: "column", height: 580,
+      background: "#111827", border: "1px solid rgba(255,255,255,0.07)",
+      borderRadius: 16, overflow: "hidden",
+    }}>
       {/* Header */}
-      <div className="flex items-center gap-3 mb-5 pb-4 border-b border-white/[0.06] shrink-0">
-        <div className="w-9 h-9 rounded-xl bg-accent-blue/10 border border-accent-blue/20 flex items-center justify-center text-base">💬</div>
+      <div style={{
+        padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.06)",
+        display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0,
+      }}>
         <div>
-          <h3 className="text-sm font-bold text-white">Chat with Repository</h3>
-          <p className="text-xs text-white/35 mt-0.5">RAG-powered · history persists across tab switches</p>
+          <p style={{ fontSize: 13, fontWeight: 600, color: "#E5E7EB" }}>Chat</p>
+          <p style={{ fontSize: 11, color: "#4B5563", marginTop: 1 }}>RAG-powered · context from codebase</p>
         </div>
         {messages.length > 0 && (
-          <span className="ml-auto badge">{messages.length} messages</span>
+          <span className="badge">{messages.length} messages</span>
         )}
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto space-y-5 pr-1 mb-4">
-        {displayMessages.map((msg, i) => (
-          <div key={i}
-            className={`flex gap-3 animate-slide-up ${msg.role === "user" ? "flex-row-reverse" : ""}`}
-            style={{ animationDelay: `${Math.min(i, 5) * 30}ms` }}>
-            <div className={`w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-xs font-bold
-              ${msg.role === "user"
-                ? "bg-gradient-to-br from-accent-blue to-accent-purple text-white shadow-[0_0_10px_rgba(59,130,246,0.4)]"
-                : "bg-white/[0.06] text-white/50 border border-white/[0.08]"}`}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "16px 18px", display: "flex", flexDirection: "column", gap: 16 }}>
+        {display.map((msg, i) => (
+          <div key={i} className="animate-fade-in" style={{
+            display: "flex", gap: 10,
+            flexDirection: msg.role === "user" ? "row-reverse" : "row",
+            alignItems: "flex-start",
+          }}>
+            {/* Avatar */}
+            <div style={{
+              width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 11, fontWeight: 600,
+              background: msg.role === "user" ? "#7C3AED" : "rgba(255,255,255,0.05)",
+              border: "1px solid " + (msg.role === "user" ? "rgba(124,58,237,0.5)" : "rgba(255,255,255,0.08)"),
+              color: msg.role === "user" ? "#fff" : "#6B7280",
+            }}>
               {msg.role === "user" ? "U" : "AI"}
             </div>
-            <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed transition-all duration-200 hover:scale-[1.01]
-              ${msg.role === "user"
-                ? "bg-gradient-to-br from-accent-blue to-accent-purple text-white rounded-tr-sm shadow-[0_4px_16px_rgba(59,130,246,0.25)]"
-                : "bg-white/[0.04] border border-white/[0.08] text-white/80 rounded-tl-sm hover:border-white/[0.14]"}`}>
-              <p className="whitespace-pre-wrap">{msg.content}</p>
+
+            {/* Bubble */}
+            <div style={{
+              maxWidth: "78%",
+              padding: "10px 14px",
+              borderRadius: msg.role === "user" ? "12px 4px 12px 12px" : "4px 12px 12px 12px",
+              background: msg.role === "user" ? "#7C3AED" : "rgba(255,255,255,0.04)",
+              border: "1px solid " + (msg.role === "user" ? "rgba(124,58,237,0.4)" : "rgba(255,255,255,0.07)"),
+              fontSize: 13, color: msg.role === "user" ? "#fff" : "#D1D5DB",
+              lineHeight: 1.65,
+            }}>
+              <p style={{ whiteSpace: "pre-wrap", margin: 0 }}>{msg.content}</p>
               {msg.sources?.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-white/[0.12]">
-                  <p className="text-xs text-white/40 mb-1.5">Sources:</p>
-                  <div className="flex flex-wrap gap-1.5">
+                <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.1)" }}>
+                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 6 }}>Sources</p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                     {msg.sources.map((s) => (
-                      <span key={s} className="text-xs font-mono text-accent-blue bg-accent-blue/10
-                                               border border-accent-blue/20 px-2 py-0.5 rounded-md
-                                               hover:bg-accent-blue/15 transition-colors duration-150">
-                        {s}
-                      </span>
+                      <span key={s} style={{
+                        fontSize: 11, fontFamily: "JetBrains Mono, monospace",
+                        padding: "2px 8px", borderRadius: 6,
+                        background: "rgba(124,58,237,0.15)", border: "1px solid rgba(124,58,237,0.25)",
+                        color: "#A78BFA",
+                      }}>{s}</span>
                     ))}
                   </div>
                 </div>
@@ -100,10 +108,18 @@ export default function ChatBox({ prefillMessage }) {
         ))}
 
         {loading && (
-          <div className="flex gap-3 animate-fade-in">
-            <div className="w-7 h-7 rounded-full bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-xs text-white/50">AI</div>
-            <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl rounded-tl-sm px-4 py-3">
-              <TypingDots />
+          <div className="animate-fade-in" style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
+              fontSize: 11, color: "#6B7280",
+            }}>AI</div>
+            <div style={{
+              padding: "12px 16px", borderRadius: "4px 12px 12px 12px",
+              background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)",
+            }}>
+              <Dots />
             </div>
           </div>
         )}
@@ -111,16 +127,26 @@ export default function ChatBox({ prefillMessage }) {
       </div>
 
       {/* Input */}
-      <div className="flex gap-3 shrink-0 pt-4 border-t border-white/[0.06]">
+      <div style={{
+        padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.06)",
+        display: "flex", gap: 10, flexShrink: 0,
+        background: "rgba(255,255,255,0.01)",
+      }}>
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKey}
-          placeholder="Ask about authentication, data flow, architecture…"
+          onKeyDown={onKey}
+          placeholder="Ask about architecture, files, patterns…"
           rows={2}
-          className="input flex-1 resize-none font-sans"
+          className="input"
+          style={{ flex: 1, resize: "none", fontFamily: "inherit" }}
         />
-        <button onClick={send} disabled={loading || !input.trim()} className="btn-primary self-end px-5">
+        <button
+          onClick={send}
+          disabled={loading || !input.trim()}
+          className="btn-primary"
+          style={{ alignSelf: "flex-end", padding: "9px 18px" }}
+        >
           Send
         </button>
       </div>
@@ -128,12 +154,15 @@ export default function ChatBox({ prefillMessage }) {
   );
 }
 
-function TypingDots() {
+function Dots() {
   return (
-    <div className="flex gap-1.5 items-center h-5">
+    <div style={{ display: "flex", gap: 5, alignItems: "center", height: 18 }}>
       {[0, 1, 2].map((i) => (
-        <span key={i} className="w-1.5 h-1.5 bg-white/30 rounded-full animate-bounce"
-          style={{ animationDelay: `${i * 0.15}s`, animationDuration: "0.9s" }} />
+        <span key={i} style={{
+          width: 5, height: 5, borderRadius: "50%", background: "#4B5563",
+          display: "inline-block",
+          animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
+        }} />
       ))}
     </div>
   );

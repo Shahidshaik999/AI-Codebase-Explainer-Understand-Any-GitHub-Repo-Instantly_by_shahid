@@ -1,95 +1,115 @@
 import { useAnalysis } from "../context/AnalysisContext";
 
+function str(val) {
+  if (val == null) return "";
+  if (typeof val === "string") return val;
+  if (typeof val === "object") return val.description || val.summary || val.text || JSON.stringify(val);
+  return String(val);
+}
+
 export default function SummaryCard() {
-  const { state: { analysisData: result } } = useAnalysis();
-  if (!result) return null;
+  const { state: { analysisData: r } } = useAnalysis();
+  if (!r) return null;
 
   return (
-    <div className="space-y-4 stagger">
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }} className="stagger">
+
+      {/* Summary */}
       <div className="card-hover animate-slide-up">
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-accent-blue/10 border border-accent-blue/20
-                            flex items-center justify-center text-sm shrink-0">📋</div>
-            <h3 className="font-semibold text-white">Summary</h3>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start",
+                      marginBottom: 14, gap: 12 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <span className="ai-label">✦ Summary</span>
+            <p style={{ fontSize: 15, fontWeight: 600, color: "#E5E7EB", letterSpacing: "-0.01em" }}>
+              {r.repo_name}
+            </p>
           </div>
-          <span className="badge font-mono text-xs shrink-0">{result.repo_name}</span>
-        </div>
-        <p className="text-white/70 leading-relaxed text-sm">{result.summary}</p>
-        <div className="flex items-center gap-3 mt-4 pt-4 border-t border-white/[0.06]">
-          <span className="text-xs text-white/30">{result.total_files_analyzed} files analyzed</span>
-          <span className="text-white/20">·</span>
-          <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium border
-            ${result.explain_mode === "beginner"
-              ? "bg-accent-green/10 text-accent-green border-accent-green/20"
-              : "bg-accent-blue/10 text-accent-blue border-accent-blue/20"}`}>
-            {result.explain_mode} mode
+          <span className={r.explain_mode === "beginner" ? "badge-green" : "badge-purple"} style={{ flexShrink: 0 }}>
+            {r.explain_mode} mode
           </span>
         </div>
+        <p style={{ fontSize: 14, color: "#9CA3AF", lineHeight: 1.75 }}>{str(r.summary)}</p>
+        <p style={{ fontSize: 11, color: "#374151", marginTop: 14, paddingTop: 14,
+                    borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+          {r.total_files_analyzed} files analyzed
+        </p>
       </div>
 
-      {result.tech_stack?.length > 0 && (
+      {/* Tech Stack */}
+      {r.tech_stack?.length > 0 && (
         <div className="card-hover animate-slide-up">
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-accent-purple/10 border border-accent-purple/20
-                            flex items-center justify-center text-sm">⚡</div>
-            <h3 className="font-semibold text-white">Tech Stack</h3>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+            <span className="ai-label">✦ Detected Stack</span>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {result.tech_stack.map((tech) => (
-              <span key={tech}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium border border-white/[0.08]
-                           bg-white/[0.04] text-white/70
-                           hover:border-accent-blue/40 hover:text-accent-blue hover:bg-accent-blue/5
-                           hover:scale-[1.05] active:scale-[0.97] transition-all duration-200 cursor-default">
-                {tech}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {r.tech_stack.map((t, i) => (
+              <span key={i} style={{
+                padding: "4px 11px", borderRadius: 99, fontSize: 12, fontWeight: 500,
+                background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)",
+                color: "#9CA3AF", cursor: "default", transition: "all 0.15s",
+                letterSpacing: "0.01em",
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.borderColor = "rgba(124,58,237,0.45)";
+                e.target.style.color = "#C4B5FD";
+                e.target.style.background = "rgba(124,58,237,0.08)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.borderColor = "rgba(255,255,255,0.09)";
+                e.target.style.color = "#9CA3AF";
+                e.target.style.background = "rgba(255,255,255,0.04)";
+              }}>
+                {str(t)}
               </span>
             ))}
           </div>
         </div>
       )}
 
-      {result.entry_points?.length > 0 && (
+      {/* Entry Points */}
+      {r.entry_points?.length > 0 && (
         <div className="card-hover animate-slide-up">
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-accent-cyan/10 border border-accent-cyan/20
-                            flex items-center justify-center text-sm">🚀</div>
-            <h3 className="font-semibold text-white">Entry Points</h3>
-          </div>
-          <ul className="space-y-2">
-            {result.entry_points.map((ep) => (
-              <li key={ep}
-                className="flex items-center gap-3 text-sm font-mono text-accent-cyan
-                           bg-accent-cyan/5 border border-accent-cyan/15 px-4 py-2.5 rounded-xl
-                           hover:border-accent-cyan/30 hover:translate-x-1 transition-all duration-200">
-                <span className="text-accent-cyan/40">▶</span>{ep}
-              </li>
+          <span className="ai-label" style={{ marginBottom: 12, display: "inline-flex" }}>✦ Entry Points</span>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 12 }}>
+            {r.entry_points.map((ep, i) => (
+              <div key={i} style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "8px 12px", borderRadius: 8,
+                background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
+                fontFamily: "JetBrains Mono, monospace", fontSize: 12, color: "#9CA3AF",
+                transition: "border-color 0.15s",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; }}>
+                <span style={{ color: "#4B5563", fontSize: 9 }}>▶</span>
+                {str(ep)}
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       )}
 
-      {result.execution_flow && (
+      {/* Execution Flow */}
+      {r.execution_flow && (
         <div className="card-hover animate-slide-up">
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-accent-yellow/10 border border-accent-yellow/20
-                            flex items-center justify-center text-sm">🔁</div>
-            <h3 className="font-semibold text-white">Execution Flow</h3>
-          </div>
-          <p className="text-white/70 text-sm leading-relaxed whitespace-pre-line">{result.execution_flow}</p>
+          <span className="ai-label" style={{ marginBottom: 12, display: "inline-flex" }}>✦ Execution Flow</span>
+          <p style={{ fontSize: 13, color: "#9CA3AF", lineHeight: 1.75, whiteSpace: "pre-line", marginTop: 12 }}>
+            {str(r.execution_flow)}
+          </p>
         </div>
       )}
 
-      {result.where_to_start && (
-        <div className="card border-accent-blue/20 bg-gradient-to-br from-accent-blue/8 to-accent-purple/5
-                        animate-slide-up hover:border-accent-blue/35 hover:-translate-y-0.5 transition-all duration-300">
-          <div className="flex items-start gap-3">
-            <span className="text-2xl shrink-0">💡</span>
-            <div>
-              <h3 className="text-sm font-semibold text-accent-blue mb-1.5">Where to Start Reading</h3>
-              <p className="text-white/70 text-sm leading-relaxed">{result.where_to_start}</p>
-            </div>
-          </div>
+      {/* Where to Start */}
+      {r.where_to_start && (
+        <div className="animate-slide-up" style={{
+          padding: "16px 18px", borderRadius: 12,
+          background: "rgba(124,58,237,0.06)", border: "1px solid rgba(124,58,237,0.2)",
+        }}>
+          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.06em",
+                      textTransform: "uppercase", color: "#7C3AED", marginBottom: 8 }}>
+            Where to Start
+          </p>
+          <p style={{ fontSize: 13, color: "#9CA3AF", lineHeight: 1.7 }}>{str(r.where_to_start)}</p>
         </div>
       )}
     </div>

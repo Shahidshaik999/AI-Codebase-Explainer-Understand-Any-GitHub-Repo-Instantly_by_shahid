@@ -43,28 +43,44 @@ def run_phase1(
 
     raw = analyze_chunks(representative, folder_structure, repo_name, explain_mode)
 
-    important_files = [
-        ImportantFile(
-            path=f.get("path", ""),
-            reason=f.get("reason", ""),
+    important_files = []
+    for f in raw.get("important_files", []):
+        # Guard: LLM sometimes returns non-dict items
+        if not isinstance(f, dict):
+            continue
+        path = f.get("path") or f.get("file") or f.get("name") or ""
+        reason = f.get("reason") or f.get("description") or f.get("role") or ""
+        if not path:
+            continue
+        important_files.append(ImportantFile(
+            path=str(path),
+            reason=str(reason),
             language=f.get("language"),
             size_kb=next(
-                (fi["size_kb"] for fi in files if fi["relative_path"] == f.get("path")),
+                (fi["size_kb"] for fi in files if fi["relative_path"] == path),
                 None,
             ),
-        )
-        for f in raw.get("important_files", [])
-    ]
+        ))
+
+    # Ensure string fields are actually strings (LLM can return objects)
+    def _str(val):
+        if val is None:
+            return None
+        if isinstance(val, str):
+            return val
+        if isinstance(val, dict):
+            return val.get("description") or val.get("summary") or val.get("text") or str(val)
+        return str(val)
 
     return AnalysisResult(
         repo_url=repo_url,
         repo_name=repo_name,
-        summary=raw.get("summary", ""),
-        tech_stack=raw.get("tech_stack", []),
-        entry_points=raw.get("entry_points", []),
+        summary=_str(raw.get("summary", "")),
+        tech_stack=[str(t) for t in raw.get("tech_stack", []) if isinstance(t, str)],
+        entry_points=[str(e) for e in raw.get("entry_points", []) if isinstance(e, str)],
         important_files=important_files,
-        execution_flow=raw.get("execution_flow"),
-        where_to_start=raw.get("where_to_start"),
+        execution_flow=_str(raw.get("execution_flow")),
+        where_to_start=_str(raw.get("where_to_start")),
         explain_mode=explain_mode,
         total_files_analyzed=len(files),
     )

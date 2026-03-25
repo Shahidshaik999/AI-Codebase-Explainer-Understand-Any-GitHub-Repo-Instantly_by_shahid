@@ -78,16 +78,18 @@ function TreeNode({ node, depth = 0, onFileClick, selectedPath, searchQuery }) {
   return (
     <button
       onClick={() => onFileClick?.(node.fullPath, node.name)}
-      className={`w-full flex items-center gap-1.5 px-2 py-[3px] rounded-lg
-                  transition-all duration-150 group text-left
-                  ${isSelected
-                    ? "bg-accent-blue/10 border border-accent-blue/20"
-                    : "hover:bg-white/[0.04] border border-transparent"}`}
-      style={{ paddingLeft: `${indent + 22}px` }}
+      className="w-full flex items-center gap-1.5 px-2 py-[3px] rounded-lg transition-all duration-150 group text-left border"
+      style={{
+        paddingLeft: `${indent + 22}px`,
+        background: isSelected ? "rgba(124,58,237,0.08)" : "transparent",
+        borderColor: isSelected ? "rgba(124,58,237,0.25)" : "transparent",
+      }}
+      onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+      onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
     >
       <span className="text-[11px] shrink-0" style={{ color }}>●</span>
-      <span className={`text-xs font-mono transition-colors truncate
-                        ${isSelected ? "text-accent-blue" : "text-white/55 group-hover:text-white/80"}`}>
+      <span className="text-xs font-mono transition-colors truncate"
+            style={{ color: isSelected ? "#C4B5FD" : "rgba(255,255,255,0.55)" }}>
         {node.name}
       </span>
     </button>
@@ -153,7 +155,7 @@ export default function ProjectTree({ onFileClick, selectedPath, compact = false
   if (loading) {
     return (
       <div className="flex items-center gap-3 py-6 justify-center text-white/40 text-sm">
-        <span className="w-4 h-4 border-2 border-white/20 border-t-accent-blue rounded-full animate-spin" />
+        <span className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
         Building tree…
       </div>
     );
@@ -161,7 +163,7 @@ export default function ProjectTree({ onFileClick, selectedPath, compact = false
 
   if (error) {
     return (
-      <div className="text-accent-red text-xs p-3">
+      <div className="text-xs p-3" style={{ color: "#EF4444" }}>
         {error}
         <button onClick={() => { setError(null); load(); }}
           className="ml-2 underline opacity-70 hover:opacity-100">Retry</button>
@@ -193,7 +195,10 @@ export default function ProjectTree({ onFileClick, selectedPath, compact = false
           placeholder="Search files…"
           className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl
                      pl-8 pr-3 py-2 text-xs text-white/70 placeholder-white/25
-                     focus:outline-none focus:border-accent-blue/40 transition-colors"
+                     focus:outline-none transition-colors"
+          style={{ outline: "none" }}
+          onFocus={(e) => { e.target.style.borderColor = "rgba(255,255,255,0.18)"; }}
+          onBlur={(e) => { e.target.style.borderColor = "rgba(255,255,255,0.08)"; }}
         />
         {searchQuery && (
           <button onClick={() => setSearchQuery("")}
