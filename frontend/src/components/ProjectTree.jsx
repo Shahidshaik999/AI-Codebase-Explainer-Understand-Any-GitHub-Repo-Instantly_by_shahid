@@ -1,69 +1,112 @@
 import { useState, useEffect } from "react";
+import {
+  ChevronRight, ChevronDown, Search, X,
+  Folder, FolderOpen, File,
+} from "lucide-react";
 import { useAnalysis } from "../context/AnalysisContext";
 import { getRepoStructure } from "../services/api";
 
-// ── File extension → color ────────────────────────────────────────────────────
 const EXT_COLOR = {
-  ".js":   "#fde047", ".jsx":  "#22d3ee", ".ts":   "#60a5fa", ".tsx":  "#67e8f9",
-  ".py":   "#facc15", ".go":   "#2dd4bf", ".rs":   "#f97316", ".java": "#fb923c",
-  ".css":  "#a78bfa", ".scss": "#c084fc", ".html": "#f87171", ".json": "#86efac",
-  ".md":   "#94a3b8", ".yml":  "#fbbf24", ".yaml": "#fbbf24", ".env":  "#6ee7b7",
-  ".sh":   "#34d399", ".toml": "#fb923c", ".lock": "#64748b", ".txt":  "#94a3b8",
+  ".js":   "#CA8A04", ".jsx":  "#0891B2", ".ts":   "#2563EB", ".tsx":  "#0891B2",
+  ".py":   "#D97706", ".go":   "#0D9488", ".rs":   "#C2410C", ".java": "#EA580C",
+  ".css":  "#7C3AED", ".scss": "#A855F7", ".html": "#DC2626", ".json": "#16A34A",
+  ".md":   "#6B7280", ".yml":  "#D97706", ".yaml": "#D97706", ".env":  "#059669",
+  ".sh":   "#059669", ".toml": "#EA580C", ".lock": "#9CA3AF", ".txt":  "#6B7280",
 };
 
 function extColor(name) {
   const dot = name.lastIndexOf(".");
-  if (dot === -1) return "#94a3b8";
-  return EXT_COLOR[name.slice(dot).toLowerCase()] || "#94a3b8";
+  if (dot === -1) return "#9CA3AF";
+  return EXT_COLOR[name.slice(dot).toLowerCase()] || "#9CA3AF";
 }
 
-// ── Recursive tree node ───────────────────────────────────────────────────────
+function nodeMatchesSearch(node, q) {
+  if (!q) return true;
+  const lower = q.toLowerCase();
+  if (node.name.toLowerCase().includes(lower)) return true;
+  if (node.type === "folder" && node.children)
+    return node.children.some((c) => nodeMatchesSearch(c, q));
+  return false;
+}
+
+function attachPaths(node, parentPath = "") {
+  const fullPath = parentPath ? `${parentPath}/${node.name}` : node.name;
+  node.fullPath = fullPath;
+  if (node.type === "folder" && node.children)
+    node.children.forEach((c) => attachPaths(c, fullPath));
+}
+
 function TreeNode({ node, depth = 0, onFileClick, selectedPath, searchQuery }) {
   const [open, setOpen] = useState(depth < 2);
-  const indent = depth * 14;
+  const indent = depth * 12;
 
-  // When searching, auto-expand folders that contain matches
   useEffect(() => {
     if (searchQuery && node.type === "folder") setOpen(true);
-  }, [searchQuery]);
+  }, [searchQuery, node.type]);
 
   if (node.type === "folder") {
-    // Filter children when searching
     const children = searchQuery
       ? node.children?.filter((c) => nodeMatchesSearch(c, searchQuery))
       : node.children;
-
     if (searchQuery && !children?.length) return null;
 
     return (
       <div>
         <button
           onClick={() => setOpen((o) => !o)}
-          className="w-full flex items-center gap-1.5 px-2 py-[3px] rounded-lg
-                     hover:bg-white/[0.05] transition-colors duration-150 group text-left"
-          style={{ paddingLeft: `${indent + 8}px` }}
+          style={{
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+            padding: `3px 8px 3px ${indent + 8}px`,
+            borderRadius: 5,
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            textAlign: "left",
+          }}
+          className="tree-node-folder"
         >
-          <span className="text-white/30 text-[10px] w-3 shrink-0 transition-transform duration-150"
-                style={{ transform: open ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span>
-          <span className="text-sm shrink-0">{open ? "📂" : "📁"}</span>
-          <span className="text-sm text-white/70 group-hover:text-white/90 transition-colors font-medium truncate">
+          <span style={{ color: "var(--text-subtle)", flexShrink: 0, width: 12 }}>
+            {open
+              ? <ChevronDown size={10} />
+              : <ChevronRight size={10} />}
+          </span>
+          <span style={{ color: "#F59E0B", flexShrink: 0 }}>
+            {open ? <FolderOpen size={12} /> : <Folder size={12} />}
+          </span>
+          <span style={{
+            fontSize: 12, color: "var(--text)", fontWeight: 500,
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            flex: 1,
+          }}>
             {node.name}
           </span>
           {!searchQuery && node.children && (
-            <span className="ml-auto text-[10px] text-white/20 shrink-0 pr-1">
+            <span style={{ fontSize: 9, color: "var(--text-subtle)", flexShrink: 0 }}>
               {node.children.length}
             </span>
           )}
         </button>
 
         {open && children?.length > 0 && (
-          <div className="relative">
-            <div className="absolute top-0 bottom-0 w-px bg-white/[0.05]"
-                 style={{ left: `${indent + 16}px` }} />
+          <div style={{ position: "relative" }}>
+            <div style={{
+              position: "absolute",
+              top: 4, bottom: 4, width: 1,
+              background: "var(--border-muted)",
+              left: `${indent + 17}px`,
+            }} />
             {children.map((child, i) => (
-              <TreeNode key={`${child.name}-${i}`} node={child} depth={depth + 1}
-                onFileClick={onFileClick} selectedPath={selectedPath}
-                searchQuery={searchQuery} />
+              <TreeNode
+                key={`${child.name}-${i}`}
+                node={child}
+                depth={depth + 1}
+                onFileClick={onFileClick}
+                selectedPath={selectedPath}
+                searchQuery={searchQuery}
+              />
             ))}
           </div>
         )}
@@ -71,63 +114,57 @@ function TreeNode({ node, depth = 0, onFileClick, selectedPath, searchQuery }) {
     );
   }
 
-  // File node
   const color = extColor(node.name);
   const isSelected = selectedPath === node.fullPath;
 
   return (
     <button
       onClick={() => onFileClick?.(node.fullPath, node.name)}
-      className="w-full flex items-center gap-1.5 px-2 py-[3px] rounded-lg transition-all duration-150 group text-left border"
       style={{
-        paddingLeft: `${indent + 22}px`,
-        background: isSelected ? "rgba(124,58,237,0.08)" : "transparent",
-        borderColor: isSelected ? "rgba(124,58,237,0.25)" : "transparent",
+        width: "100%",
+        display: "flex",
+        alignItems: "center",
+        gap: 5,
+        padding: `3px 8px 3px ${indent + 22}px`,
+        borderRadius: 5,
+        background: isSelected ? "var(--accent-bg)" : "none",
+        border: isSelected ? "1px solid var(--accent-border)" : "1px solid transparent",
+        cursor: "pointer",
+        textAlign: "left",
+        transition: "background var(--t-fast)",
       }}
-      onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
-      onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
+      className={`tree-node-file${isSelected ? " selected" : ""}`}
     >
-      <span className="text-[11px] shrink-0" style={{ color }}>●</span>
-      <span className="text-xs font-mono transition-colors truncate"
-            style={{ color: isSelected ? "#C4B5FD" : "rgba(255,255,255,0.55)" }}>
+      <span style={{ color, flexShrink: 0 }}>
+        <File size={10} />
+      </span>
+      <span style={{
+        fontSize: 11,
+        fontFamily: "JetBrains Mono, monospace",
+        color: isSelected ? "var(--accent)" : "var(--text)",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+        flex: 1,
+      }}>
         {node.name}
       </span>
     </button>
   );
 }
 
-// Check if a node or any of its descendants match the search query
-function nodeMatchesSearch(node, q) {
-  if (!q) return true;
-  const lower = q.toLowerCase();
-  if (node.name.toLowerCase().includes(lower)) return true;
-  if (node.type === "folder" && node.children) {
-    return node.children.some((c) => nodeMatchesSearch(c, q));
-  }
-  return false;
-}
-
-// Attach full paths to all nodes (mutates in place, called once on load)
-function attachPaths(node, parentPath = "") {
-  const fullPath = parentPath ? `${parentPath}/${node.name}` : node.name;
-  node.fullPath = fullPath;
-  if (node.type === "folder" && node.children) {
-    node.children.forEach((c) => attachPaths(c, fullPath));
-  }
-}
-
-// ── Main component ────────────────────────────────────────────────────────────
 export default function ProjectTree({ onFileClick, selectedPath, compact = false }) {
   const { state, dispatch } = useAnalysis();
   const { repoUrl, projectStructure } = state;
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState(null);
+  const [loading,     setLoading]     = useState(false);
+  const [error,       setError]       = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   const load = async () => {
     if (projectStructure) return;
-    setLoading(true); setError(null);
+    setLoading(true);
+    setError(null);
     try {
       const data = await getRepoStructure(repoUrl);
       if (data.children) data.children.forEach((c) => attachPaths(c, ""));
@@ -142,20 +179,23 @@ export default function ProjectTree({ onFileClick, selectedPath, compact = false
 
   useEffect(() => { load(); }, []);
 
-  // Always re-attach paths in case tree was restored from localStorage
-  // (attachPaths is idempotent — safe to call every render)
   if (projectStructure) {
-    if (projectStructure.children) {
-      projectStructure.children.forEach((c) => attachPaths(c, ""));
-    } else {
-      attachPaths(projectStructure, "");
-    }
+    if (projectStructure.children) projectStructure.children.forEach((c) => attachPaths(c, ""));
+    else attachPaths(projectStructure, "");
   }
 
   if (loading) {
     return (
-      <div className="flex items-center gap-3 py-6 justify-center text-white/40 text-sm">
-        <span className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+      <div style={{
+        display: "flex", alignItems: "center", gap: 8,
+        padding: "20px", justifyContent: "center",
+        color: "var(--text-subtle)", fontSize: 12,
+      }}>
+        <span style={{
+          width: 14, height: 14, border: "2px solid var(--border)",
+          borderTopColor: "var(--accent)", borderRadius: "50%",
+          display: "inline-block", animation: "spin 0.8s linear infinite",
+        }} />
         Building tree…
       </div>
     );
@@ -163,65 +203,89 @@ export default function ProjectTree({ onFileClick, selectedPath, compact = false
 
   if (error) {
     return (
-      <div className="text-xs p-3" style={{ color: "#EF4444" }}>
+      <div style={{ fontSize: 11, padding: 12, color: "var(--danger)" }}>
         {error}
-        <button onClick={() => { setError(null); load(); }}
-          className="ml-2 underline opacity-70 hover:opacity-100">Retry</button>
+        <button
+          onClick={() => { setError(null); load(); }}
+          style={{
+            marginLeft: 8, textDecoration: "underline",
+            background: "none", border: "none",
+            color: "var(--danger)", cursor: "pointer", fontSize: 11,
+          }}
+        >
+          Retry
+        </button>
       </div>
     );
   }
 
   if (!projectStructure) return null;
 
-  // Count stats
-  let fileCount = 0, folderCount = 0;
-  const countNodes = (node) => {
-    if (node.type === "file") fileCount++;
-    else { folderCount++; node.children?.forEach(countNodes); }
-  };
-  countNodes(projectStructure);
-
   const rootChildren = projectStructure.children || [projectStructure];
 
   return (
-    <div className="flex flex-col h-full gap-2">
-      {/* Search bar */}
-      <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-xs">🔍</span>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 6 }}>
+      {/* Search */}
+      <div style={{
+        position: "relative",
+        padding: "6px 8px 0",
+        flexShrink: 0,
+      }}>
+        <Search
+          size={11}
+          style={{
+            position: "absolute",
+            left: 17, top: "50%", transform: "translateY(-20%)",
+            color: "var(--text-subtle)", pointerEvents: "none",
+          }}
+        />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search files…"
-          className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl
-                     pl-8 pr-3 py-2 text-xs text-white/70 placeholder-white/25
-                     focus:outline-none transition-colors"
-          style={{ outline: "none" }}
-          onFocus={(e) => { e.target.style.borderColor = "rgba(255,255,255,0.18)"; }}
-          onBlur={(e) => { e.target.style.borderColor = "rgba(255,255,255,0.08)"; }}
+          placeholder="Filter files…"
+          style={{
+            width: "100%",
+            background: "var(--bg-muted)",
+            border: "1px solid var(--border)",
+            borderRadius: 6,
+            paddingLeft: 26,
+            paddingRight: searchQuery ? 26 : 8,
+            paddingTop: 5, paddingBottom: 5,
+            fontSize: 11,
+            color: "var(--text)",
+            outline: "none",
+            fontFamily: "inherit",
+            transition: "border-color var(--t-fast)",
+          }}
+          onFocus={(e) => { e.target.style.borderColor = "var(--accent)"; }}
+          onBlur={(e)  => { e.target.style.borderColor = "var(--border)"; }}
         />
         {searchQuery && (
-          <button onClick={() => setSearchQuery("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30
-                       hover:text-white/60 transition-colors text-xs">✕</button>
+          <button
+            onClick={() => setSearchQuery("")}
+            style={{
+              position: "absolute", right: 16, top: "50%", transform: "translateY(-20%)",
+              background: "none", border: "none", cursor: "pointer",
+              color: "var(--text-subtle)", display: "flex",
+            }}
+          >
+            <X size={10} />
+          </button>
         )}
       </div>
 
-      {/* Stats row */}
-      {!compact && (
-        <div className="flex gap-2 text-[10px] text-white/25">
-          <span>📁 {folderCount}</span>
-          <span>📄 {fileCount}</span>
-        </div>
-      )}
-
       {/* Tree */}
-      <div className="flex-1 overflow-y-auto
-                      scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10 pr-1">
+      <div style={{ flex: 1, overflowY: "auto", padding: "2px 4px" }}>
         {rootChildren.map((child, i) => (
-          <TreeNode key={`${child.name}-${i}`} node={child} depth={0}
-            onFileClick={onFileClick} selectedPath={selectedPath}
-            searchQuery={searchQuery} />
+          <TreeNode
+            key={`${child.name}-${i}`}
+            node={child}
+            depth={0}
+            onFileClick={onFileClick}
+            selectedPath={selectedPath}
+            searchQuery={searchQuery}
+          />
         ))}
       </div>
     </div>

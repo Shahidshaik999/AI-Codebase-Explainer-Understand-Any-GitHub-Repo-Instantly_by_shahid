@@ -1,13 +1,18 @@
 import { useState } from "react";
+import { GitFork, ArrowRight } from "lucide-react";
 import { useAnalysis } from "../context/AnalysisContext";
 
 const PHASES = [
-  { value: 1, label: "MVP" },
-  { value: 2, label: "Smart" },
-  { value: 3, label: "Full" },
+  { value: 1, label: "MVP",  desc: "Fast, basic analysis"    },
+  { value: 2, label: "Smart",desc: "Balanced depth & speed"  },
+  { value: 3, label: "Full", desc: "Deep analysis, slower"   },
 ];
 
-export default function RepoInput({ onAnalyze, loading }) {
+/**
+ * compact = true → smaller inline strip used after analysis
+ * compact = false (default) → full hero version
+ */
+export default function RepoInput({ onAnalyze, loading, compact = false }) {
   const { state } = useAnalysis();
   const [url,   setUrl]   = useState(state.repoUrl || "");
   const [mode,  setMode]  = useState(state.explainMode || "senior");
@@ -15,111 +20,208 @@ export default function RepoInput({ onAnalyze, loading }) {
 
   const submit = (e) => {
     e.preventDefault();
-    if (url.trim()) onAnalyze(url.trim(), mode, phase);
+    if (url.trim() && !loading) onAnalyze(url.trim(), mode, phase);
   };
 
+  if (compact) {
+    return (
+      <form onSubmit={submit}>
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          background: "var(--bg-card)",
+          border: "1px solid var(--border)",
+          borderRadius: 9,
+          padding: "6px 6px 6px 12px",
+          maxWidth: 640,
+          transition: "border-color var(--t-fast), box-shadow var(--t-fast)",
+        }}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = "var(--accent)";
+            e.currentTarget.style.boxShadow = "0 0 0 3px rgba(91,75,255,0.1)";
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = "var(--border)";
+            e.currentTarget.style.boxShadow = "none";
+          }}
+        >
+          <GitFork size={13} style={{ color: "var(--text-subtle)", flexShrink: 0 }} />
+          <input
+            type="text"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="github.com/owner/repository"
+            required
+            style={{
+              flex: 1,
+              background: "transparent",
+              border: "none",
+              outline: "none",
+              fontSize: 12,
+              fontFamily: "JetBrains Mono, monospace",
+              color: "var(--text)",
+              minWidth: 0,
+            }}
+          />
+          <button
+            type="submit"
+            disabled={loading || !url.trim()}
+            className="btn-primary"
+            style={{ padding: "5px 12px", fontSize: 12 }}
+          >
+            {loading
+              ? <><SpinIcon size={11} /> Analyzing</>
+              : <><ArrowRight size={12} /> Re-analyze</>}
+          </button>
+        </div>
+      </form>
+    );
+  }
+
   return (
-    <form onSubmit={submit} style={{ width: "100%", maxWidth: 680, margin: "0 auto" }}>
-      {/* Main input row — no card box */}
-      <div style={{ position: "relative", display: "flex", gap: 8, alignItems: "center" }}>
-        {/* Prefix */}
-        <span style={{
-          position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)",
-          fontSize: 13, color: "#374151", fontFamily: "JetBrains Mono, monospace",
-          pointerEvents: "none", userSelect: "none", zIndex: 1,
+    <form onSubmit={submit}>
+      {/* Main input */}
+      <div style={{ position: "relative" }}>
+        {/* GitHub icon prefix */}
+        <div style={{
+          position: "absolute",
+          left: 14,
+          top: "50%",
+          transform: "translateY(-50%)",
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          pointerEvents: "none",
+          userSelect: "none",
+          zIndex: 2,
         }}>
-          github.com/
-        </span>
+          <GitFork size={15} style={{ color: "var(--text-subtle)" }} />
+          <span style={{
+            fontSize: 13,
+            fontFamily: "JetBrains Mono, monospace",
+            color: "var(--text-subtle)",
+          }}>
+            github.com/
+          </span>
+        </div>
+
         <input
           type="text"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="owner / repository"
+          placeholder="owner/repository"
           required
+          aria-label="GitHub repository URL"
           className="hero-input"
-          style={{ paddingLeft: 104, paddingRight: 130 }}
+          style={{ paddingLeft: 140, paddingRight: 148 }}
         />
+
+        {/* CTA button */}
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !url.trim()}
           className="btn-primary"
           style={{
-            position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)",
-            padding: "8px 18px", fontSize: 13,
+            position: "absolute",
+            right: 6,
+            top: "50%",
+            transform: "translateY(-50%)",
+            padding: "8px 16px",
+            fontSize: 13,
           }}
         >
           {loading
-            ? <><Spin /> Analyzing</>
-            : "Analyze →"
-          }
+            ? <><SpinIcon size={12} /> Analyzing</>
+            : <>Analyze <ArrowRight size={13} /></>}
         </button>
       </div>
 
-      {/* Options row — minimal, centered */}
+      {/* Options row */}
       <div style={{
-        display: "flex", justifyContent: "center", gap: 20,
-        marginTop: 14, alignItems: "center", flexWrap: "wrap",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: 16,
+        marginTop: 14,
+        flexWrap: "wrap",
       }}>
-        {/* Mode */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 11, color: "#4B5563" }}>Mode</span>
-          <div style={{
-            display: "flex", gap: 1,
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.07)",
-            borderRadius: 8, padding: 2,
-          }}>
-            {["beginner", "senior"].map((m) => (
-              <button key={m} type="button" onClick={() => setMode(m)} style={{
-                padding: "3px 10px", borderRadius: 6, fontSize: 11, fontWeight: 500,
-                border: "none", cursor: "pointer", transition: "all 0.15s",
-                background: mode === m ? "#7C3AED" : "transparent",
-                color: mode === m ? "#fff" : "#6B7280",
-              }}>
-                {m === "beginner" ? "Beginner" : "Senior"}
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* Mode toggle */}
+        <ToggleGroup
+          label="Mode"
+          options={[
+            { value: "beginner", label: "Beginner" },
+            { value: "senior",   label: "Senior"   },
+          ]}
+          value={mode}
+          onChange={setMode}
+        />
 
-        {/* Divider */}
-        <span style={{ width: 1, height: 14, background: "rgba(255,255,255,0.07)" }} />
+        <span style={{ width: 1, height: 16, background: "var(--border)" }} />
 
-        {/* Depth */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 11, color: "#4B5563" }}>Depth</span>
-          <div style={{
-            display: "flex", gap: 1,
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.07)",
-            borderRadius: 8, padding: 2,
-          }}>
-            {PHASES.map((p) => (
-              <button key={p.value} type="button" onClick={() => setPhase(p.value)} style={{
-                padding: "3px 10px", borderRadius: 6, fontSize: 11, fontWeight: 500,
-                border: "none", cursor: "pointer", transition: "all 0.15s",
-                background: phase === p.value ? "#7C3AED" : "transparent",
-                color: phase === p.value ? "#fff" : "#6B7280",
-              }}>
-                {p.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* Depth toggle */}
+        <ToggleGroup
+          label="Depth"
+          options={PHASES.map((p) => ({ value: String(p.value), label: p.label, title: p.desc }))}
+          value={String(phase)}
+          onChange={(v) => setPhase(Number(v))}
+        />
       </div>
     </form>
   );
 }
 
-function Spin() {
+function ToggleGroup({ label, options, value, onChange }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <span style={{ fontSize: 11, color: "var(--text-subtle)", fontWeight: 500 }}>{label}</span>
+      <div style={{
+        display: "flex",
+        background: "var(--bg-muted)",
+        border: "1px solid var(--border)",
+        borderRadius: 6,
+        padding: 2,
+        gap: 1,
+      }}>
+        {options.map((opt) => {
+          const isActive = value === opt.value;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              title={opt.title}
+              onClick={() => onChange(opt.value)}
+              style={{
+                padding: "3px 10px",
+                borderRadius: 4,
+                fontSize: 11,
+                fontWeight: 500,
+                border: "none",
+                cursor: "pointer",
+                transition: "all var(--t-fast)",
+                background: isActive ? "var(--accent)" : "transparent",
+                color: isActive ? "#fff" : "var(--text-muted)",
+              }}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SpinIcon({ size = 12 }) {
   return (
     <span style={{
-      width: 12, height: 12,
-      border: "2px solid rgba(255,255,255,0.3)",
+      width: size, height: size,
+      border: "1.8px solid rgba(255,255,255,0.35)",
       borderTopColor: "#fff",
       borderRadius: "50%",
       display: "inline-block",
-      animation: "spin 0.8s linear infinite",
+      animation: "spin 0.75s linear infinite",
+      flexShrink: 0,
     }} />
   );
 }

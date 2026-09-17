@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { Copy, Check, MessageSquare, X, Brain, AlertTriangle } from "lucide-react";
 import { useAnalysis } from "../context/AnalysisContext";
 import { explainCode } from "../services/api";
 
-// ── Language label map ────────────────────────────────────────────────────────
 const LANG_LABEL = {
   python: "Python", javascript: "JavaScript", jsx: "JSX",
   typescript: "TypeScript", tsx: "TSX", go: "Go", rust: "Rust",
@@ -11,153 +11,219 @@ const LANG_LABEL = {
   toml: "TOML", text: "Text", binary: "Binary",
 };
 
-// ── Language badge colors ─────────────────────────────────────────────────────
 const LANG_COLOR = {
-  python:     { bg: "bg-yellow-500/15", text: "text-yellow-400",  border: "border-yellow-500/25" },
-  javascript: { bg: "bg-yellow-400/15", text: "text-yellow-300",  border: "border-yellow-400/25" },
-  jsx:        { bg: "bg-cyan-500/15",   text: "text-cyan-400",    border: "border-cyan-500/25"   },
-  typescript: { bg: "bg-blue-500/15",   text: "text-blue-400",    border: "border-blue-500/25"   },
-  tsx:        { bg: "bg-cyan-400/15",   text: "text-cyan-300",    border: "border-cyan-400/25"   },
-  go:         { bg: "bg-teal-500/15",   text: "text-teal-400",    border: "border-teal-500/25"   },
-  rust:       { bg: "bg-orange-500/15", text: "text-orange-400",  border: "border-orange-500/25" },
-  java:       { bg: "bg-orange-400/15", text: "text-orange-300",  border: "border-orange-400/25" },
-  css:        { bg: "bg-purple-500/15", text: "text-purple-400",  border: "border-purple-500/25" },
-  json:       { bg: "bg-green-500/15",  text: "text-green-400",   border: "border-green-500/25"  },
-  markdown:   { bg: "bg-slate-500/15",  text: "text-slate-400",   border: "border-slate-500/25"  },
-  default:    { bg: "bg-white/[0.06]",  text: "text-white/50",    border: "border-white/10"      },
+  python:     { bg: "#FEF3C7", text: "#D97706", border: "#FDE68A" },
+  javascript: { bg: "#FEF9C3", text: "#CA8A04", border: "#FDE047" },
+  jsx:        { bg: "#ECFEFF", text: "#0891B2", border: "#A5F3FC" },
+  typescript: { bg: "#EFF6FF", text: "#2563EB", border: "#BFDBFE" },
+  tsx:        { bg: "#ECFEFF", text: "#0891B2", border: "#A5F3FC" },
+  go:         { bg: "#F0FDFA", text: "#0D9488", border: "#99F6E4" },
+  rust:       { bg: "#FFF7ED", text: "#C2410C", border: "#FED7AA" },
+  java:       { bg: "#FFF7ED", text: "#EA580C", border: "#FED7AA" },
+  css:        { bg: "#F5F3FF", text: "#7C3AED", border: "#DDD6FE" },
+  json:       { bg: "#F0FDF4", text: "#16A34A", border: "#BBF7D0" },
+  default:    { bg: "var(--bg-muted)", text: "var(--text-muted)", border: "var(--border)" },
 };
 
-// ── Complexity badge ──────────────────────────────────────────────────────────
 const COMPLEXITY_META = {
-  low:    { label: "Low complexity",    cls: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20" },
-  medium: { label: "Medium complexity", cls: "text-amber-400 bg-amber-400/10 border-amber-400/20"      },
-  high:   { label: "High complexity",   cls: "text-red-400 bg-red-400/10 border-red-400/20"            },
+  low:    { label: "Low complexity",    color: "#059669", bg: "#ECFDF5", border: "#A7F3D0" },
+  medium: { label: "Medium complexity", color: "#D97706", bg: "#FFFBEB", border: "#FDE68A" },
+  high:   { label: "High complexity",   color: "#DC2626", bg: "#FEF2F2", border: "#FECACA" },
 };
 
-// ── Single-pass syntax highlighter ───────────────────────────────────────────
+/* ──────────────────────────────────────────────────────────────────────────
+   Light syntax highlighter for dark code blocks
+   ────────────────────────────────────────────────────────────────────────── */
 function highlight(line) {
   if (!line) return "";
-  const esc = line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const combined = /(["'`])(?:(?!\1)[^\\]|\\.)*\1|(#[^\n]*)|(\/\/[^\n]*)|\b(\d+(?:\.\d+)?)\b|\b(import|export|from|const|let|var|function|return|class|extends|if|else|elif|for|while|async|await|def|self|None|True|False|pass|yield|lambda|with|as|try|except|finally|raise|in|not|and|or|is|del|global|nonlocal|type|interface|enum|struct|pub|fn|use|mod|impl|match|where|new|this|super|static|void|int|str|bool|float|null|undefined|true|false)\b|([a-zA-Z_]\w*)(?=\s*\()/g;
-  return esc.replace(combined, (match, str, hash, slash, num, kw, fn) => {
-    if (str  !== undefined) return `<span class="text-emerald-400">${match}</span>`;
-    if (hash !== undefined) return `<span class="text-white/30 italic">${match}</span>`;
-    if (slash!== undefined) return `<span class="text-white/30 italic">${match}</span>`;
-    if (num  !== undefined) return `<span class="text-amber-400">${match}</span>`;
-    if (kw   !== undefined) return `<span class="text-violet-400 font-medium">${match}</span>`;
-    if (fn   !== undefined) return `<span class="text-sky-400">${match}</span>`;
-    return match;
-  });
+  const esc = line
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  return esc.replace(
+    /(["'`])(?:(?!\1)[^\\]|\\.)*\1|(#[^\n]*)|(\/\/[^\n]*)|\b(\d+(?:\.\d+)?)\b|\b(import|export|from|const|let|var|function|return|class|extends|if|else|elif|for|while|async|await|def|self|None|True|False|pass|yield|lambda|with|as|try|except|finally|raise|in|not|and|or|is|del|global|nonlocal|type|interface|enum|struct|pub|fn|use|mod|impl|match|where|new|this|super|static|void|int|str|bool|float|null|undefined|true|false)\b|([a-zA-Z_]\w*)(?=\s*\()/g,
+    (match, strQ, hash, slash, num, kw, fn) => {
+      if (strQ  !== undefined) return `<span style="color:#A3BE8C">${match}</span>`;
+      if (hash  !== undefined) return `<span style="color:#616E88;font-style:italic">${match}</span>`;
+      if (slash !== undefined) return `<span style="color:#616E88;font-style:italic">${match}</span>`;
+      if (num   !== undefined) return `<span style="color:#B48EAD">${match}</span>`;
+      if (kw    !== undefined) return `<span style="color:#81A1C1;font-weight:500">${match}</span>`;
+      if (fn    !== undefined) return `<span style="color:#88C0D0">${match}</span>`;
+      return match;
+    }
+  );
 }
 
-// ── Explain Modal ─────────────────────────────────────────────────────────────
+/* ──────────────────────────────────────────────────────────────────────────
+   Explain modal
+   ────────────────────────────────────────────────────────────────────────── */
 function ExplainModal({ result, onClose }) {
   const meta = COMPLEXITY_META[result.complexity] || COMPLEXITY_META.medium;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-         onClick={onClose}>
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-      <div className="relative bg-[#111827] border border-white/[0.10] rounded-2xl
-                      shadow-2xl shadow-black/50 w-full max-w-lg animate-slide-up"
-           onClick={(e) => e.stopPropagation()}>
+    <div
+      style={{
+        position: "fixed", inset: 0, zIndex: 60,
+        display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+      }}
+      onClick={onClose}
+    >
+      {/* Backdrop */}
+      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.35)" }} />
+      {/* Modal */}
+      <div
+        className="animate-slide-up"
+        style={{
+          position: "relative",
+          background: "var(--bg-card)",
+          border: "1px solid var(--border)",
+          borderRadius: 12,
+          boxShadow: "0 20px 50px rgba(0,0,0,0.16)",
+          width: "100%", maxWidth: 520,
+          overflow: "hidden",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
-          <div className="flex items-center gap-2">
-            <span className="text-base">🧠</span>
-            <span className="text-sm font-semibold text-white">Code Explanation</span>
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "13px 16px", borderBottom: "1px solid var(--border)",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{
+              width: 26, height: 26, borderRadius: 6,
+              background: "var(--accent-bg)", border: "1px solid var(--accent-border)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <Brain size={13} style={{ color: "var(--accent)" }} />
+            </div>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>
+              AI Code Explanation
+            </span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${meta.cls}`}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{
+              fontSize: 10, padding: "2px 8px", borderRadius: 99, fontWeight: 500,
+              background: meta.bg, color: meta.color, border: `1px solid ${meta.border}`,
+            }}>
               {meta.label}
             </span>
-            <button onClick={onClose}
-              className="text-white/30 hover:text-white/70 transition-colors text-lg leading-none">✕</button>
+            <button className="btn-icon" onClick={onClose} aria-label="Close">
+              <X size={13} />
+            </button>
           </div>
         </div>
         {/* Body */}
-        <div className="px-5 py-4">
-          <p className="text-sm text-white/70 leading-relaxed">{result.explanation}</p>
+        <div style={{ padding: "16px 18px" }}>
+          <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.75, margin: 0 }}>
+            {result.explanation}
+          </p>
         </div>
       </div>
     </div>
   );
 }
 
-// ── Main FilePreview component ────────────────────────────────────────────────
+/* ──────────────────────────────────────────────────────────────────────────
+   File Preview (full component)
+   ────────────────────────────────────────────────────────────────────────── */
 export default function FilePreview({ loadingPath, onAskAboutFile }) {
   const { state } = useAnalysis();
   const { selectedFile, explainMode } = state;
 
-  const codeRef   = useRef(null);
-  const tableRef  = useRef(null);
+  const codeRef  = useRef(null);
+  const tableRef = useRef(null);
 
-  const [selection, setSelection]       = useState("");       // selected text
-  const [selectionPos, setSelectionPos] = useState(null);     // {x, y} for tooltip
-  const [explaining, setExplaining]     = useState(false);
+  const [selection,     setSelection]     = useState("");
+  const [selectionPos,  setSelectionPos]  = useState(null);
+  const [explaining,    setExplaining]    = useState(false);
   const [explainResult, setExplainResult] = useState(null);
+  const [copied,        setCopied]        = useState(false);
 
-  // Scroll to top on file change
   useEffect(() => {
     if (codeRef.current) codeRef.current.scrollTop = 0;
-    setSelection("");
-    setSelectionPos(null);
-    setExplainResult(null);
+    setSelection(""); setSelectionPos(null); setExplainResult(null); setCopied(false);
   }, [selectedFile?.file_path]);
 
-  // Track text selection inside the code block
   const handleMouseUp = useCallback(() => {
     const sel = window.getSelection();
-    if (!sel || sel.isCollapsed) {
-      setSelection("");
-      setSelectionPos(null);
-      return;
-    }
+    if (!sel || sel.isCollapsed) { setSelection(""); setSelectionPos(null); return; }
     const text = sel.toString().trim();
-    if (!text || text.length < 5) {
-      setSelection("");
-      setSelectionPos(null);
-      return;
-    }
+    if (!text || text.length < 5) { setSelection(""); setSelectionPos(null); return; }
     const range = sel.getRangeAt(0);
     const rect  = range.getBoundingClientRect();
     setSelection(text);
-    setSelectionPos({ x: rect.left + rect.width / 2, y: rect.top - 8 });
+    setSelectionPos({ x: rect.left + rect.width / 2, y: rect.top - 10 });
   }, []);
 
-  const handleExplainSelection = async () => {
+  const handleExplain = async () => {
     if (!selection || !selectedFile) return;
-    setExplaining(true);
-    setSelectionPos(null);
+    setExplaining(true); setSelectionPos(null);
     try {
       const result = await explainCode(selection, selectedFile.file_path, explainMode);
       setExplainResult(result);
-    } catch (e) {
+    } catch {
       setExplainResult({ explanation: "Failed to get explanation.", complexity: "medium" });
     } finally {
-      setExplaining(false);
-      setSelection("");
+      setExplaining(false); setSelection("");
       window.getSelection()?.removeAllRanges();
     }
   };
 
-  // ── Empty state ──
+  const handleCopy = async () => {
+    if (!selectedFile?.content) return;
+    try {
+      await navigator.clipboard.writeText(selectedFile.content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
+
+  /* Empty state */
   if (!selectedFile && !loadingPath) {
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[400px]
-                      text-white/20 select-none gap-3">
-        <span className="text-5xl">📄</span>
-        <p className="text-sm">Select a file to preview</p>
-        <p className="text-xs text-white/10">Click any file in the explorer</p>
+      <div style={{
+        display: "flex", flexDirection: "column", alignItems: "center",
+        justifyContent: "center", height: "100%",
+        gap: 10, userSelect: "none",
+      }}>
+        <div style={{
+          width: 44, height: 44, borderRadius: 10,
+          background: "var(--bg-muted)", border: "1px solid var(--border)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+        </div>
+        <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text-muted)", margin: 0 }}>
+          Select a file to view
+        </p>
+        <p style={{ fontSize: 11, color: "var(--text-subtle)", margin: 0 }}>
+          Click any file in the explorer
+        </p>
       </div>
     );
   }
 
-  // ── Loading state ──
+  /* Loading state */
   if (loadingPath) {
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[400px] gap-3">
-        <span className="w-6 h-6 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
-        <p className="text-xs text-white/40">Loading {loadingPath.split("/").pop()}…</p>
+      <div style={{
+        display: "flex", flexDirection: "column", alignItems: "center",
+        justifyContent: "center", height: "100%", gap: 10,
+      }}>
+        <span style={{
+          width: 20, height: 20, border: "2px solid var(--border)",
+          borderTopColor: "var(--accent)", borderRadius: "50%",
+          display: "inline-block", animation: "spin 0.8s linear infinite",
+        }} />
+        <p style={{ fontSize: 12, color: "var(--text-muted)" }}>
+          Loading {loadingPath.split("/").pop()}…
+        </p>
       </div>
     );
   }
@@ -169,90 +235,109 @@ export default function FilePreview({ loadingPath, onAskAboutFile }) {
 
   return (
     <>
-      {/* Explain modal */}
       {explainResult && (
         <ExplainModal result={explainResult} onClose={() => setExplainResult(null)} />
       )}
 
-      {/* Floating "Explain" tooltip on selection */}
+      {/* Floating explain button */}
       {selectionPos && selection && (
         <div
-          className="fixed z-40 transform -translate-x-1/2 -translate-y-full"
-          style={{ left: selectionPos.x, top: selectionPos.y }}
+          className="explain-tooltip"
+          style={{
+            left: selectionPos.x, top: selectionPos.y,
+            transform: "translate(-50%, -100%)",
+          }}
         >
           <button
-            onClick={handleExplainSelection}
+            onClick={handleExplain}
             disabled={explaining}
             style={{
               display: "inline-flex", alignItems: "center", gap: 6,
-              padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 500,
-              background: "#7C3AED", color: "#fff", cursor: "pointer",
-              border: "1px solid rgba(255,255,255,0.12)",
-              boxShadow: "0 4px 16px rgba(124,58,237,0.35)",
-              transition: "all 0.15s", whiteSpace: "nowrap",
+              padding: "6px 12px", borderRadius: 7, fontSize: 12, fontWeight: 500,
+              background: "var(--accent)", color: "#fff", cursor: "pointer",
+              border: "none", boxShadow: "0 4px 16px rgba(91,75,255,0.4)",
+              transition: "all var(--t-fast)", whiteSpace: "nowrap",
+              pointerEvents: "all",
             }}
           >
             {explaining
-              ? <><span className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" /> Explaining…</>
-              : <><span>🧠</span> Explain Selection</>}
+              ? <><span style={{ width: 10, height: 10, border: "1.5px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block", animation: "spin 0.8s linear infinite" }} /> Explaining…</>
+              : <><Brain size={12} /> Explain with AI</>}
           </button>
           {/* Arrow */}
-          <div style={{ width: 8, height: 8, background: "#7C3AED", transform: "rotate(45deg)", margin: "-4px auto 0", borderRadius: 2 }} />
+          <div style={{
+            width: 8, height: 8, background: "var(--accent)",
+            transform: "rotate(45deg)", margin: "-4px auto 0", borderRadius: 2,
+          }} />
         </div>
       )}
 
-      <div className="flex flex-col h-full min-h-[400px] animate-fade-in">
-
+      <div
+        style={{ display: "flex", flexDirection: "column", height: "100%" }}
+        className="animate-fade-in"
+      >
         {/* ── File header ── */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.06]
-                        bg-white/[0.02] rounded-t-2xl flex-wrap gap-y-2 shrink-0">
-          <span className="text-base shrink-0">📄</span>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-mono font-semibold text-white/90 truncate">{fileName}</p>
-            <p className="text-[10px] text-white/25 font-mono truncate">{file_path}</p>
+        <div style={{
+          display: "flex", alignItems: "center", gap: 8,
+          padding: "9px 12px", borderBottom: "1px solid var(--border)",
+          background: "var(--bg-card)", flexShrink: 0, flexWrap: "wrap",
+        }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{
+                fontSize: 10, padding: "1px 7px", borderRadius: 4, fontWeight: 600,
+                background: langColor.bg, color: langColor.text,
+                border: `1px solid ${langColor.border}`, flexShrink: 0,
+              }}>{langLabel}</span>
+              <p style={{
+                fontSize: 12, fontFamily: "JetBrains Mono, monospace", fontWeight: 600,
+                color: "var(--text)", margin: 0,
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              }}>
+                {fileName}
+              </p>
+            </div>
+            <p style={{
+              fontSize: 10, color: "var(--text-subtle)", margin: "2px 0 0",
+              fontFamily: "JetBrains Mono, monospace",
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            }}>
+              {file_path}
+            </p>
           </div>
-          <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
-            {/* Language badge */}
-            <span className={`text-[10px] px-2 py-0.5 rounded-md border font-medium
-                              ${langColor.bg} ${langColor.text} ${langColor.border}`}>
-              {langLabel}
-            </span>
-            <span className="badge text-[10px]">{line_count} lines</span>
-            {size_kb != null && (
-              <span className="badge text-[10px]">{size_kb} KB</span>
-            )}
+
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+            <span className="badge" style={{ fontSize: 10 }}>{line_count} lines</span>
+            {size_kb != null && <span className="badge" style={{ fontSize: 10 }}>{size_kb} KB</span>}
             {truncated && (
-              <span className="badge text-[10px] text-amber-400 border-amber-400/30">⚠ truncated</span>
+              <span className="badge-yellow" style={{ fontSize: 10 }}>
+                <AlertTriangle size={9} /> truncated
+              </span>
             )}
-          </div>
-          {/* Action buttons */}
-          <div className="flex items-center gap-1.5 shrink-0 ml-auto">
             {explaining && (
-              <span className="text-[10px] text-white/40 flex items-center gap-1">
-                <span className="w-3 h-3 border border-white/20 border-t-white/60 rounded-full animate-spin" />
+              <span style={{ fontSize: 10, color: "var(--text-subtle)", display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ width: 10, height: 10, border: "1.5px solid var(--border)", borderTopColor: "var(--accent)", borderRadius: "50%", display: "inline-block", animation: "spin 0.8s linear infinite" }} />
                 Explaining…
               </span>
             )}
             {onAskAboutFile && (
               <button
+                className="btn-ghost"
                 onClick={() => onAskAboutFile(file_path)}
-                style={{
-                  display: "inline-flex", alignItems: "center", gap: 6,
-                  padding: "5px 12px", borderRadius: 8, fontSize: 11, fontWeight: 500,
-                  background: "rgba(255,255,255,0.05)", color: "#9CA3AF",
-                  border: "1px solid rgba(255,255,255,0.10)", cursor: "pointer",
-                  transition: "all 0.15s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "rgba(255,255,255,0.09)";
-                  e.currentTarget.style.color = "#E5E7EB";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "rgba(255,255,255,0.05)";
-                  e.currentTarget.style.color = "#9CA3AF";
-                }}
+                style={{ fontSize: 11 }}
               >
-                💬 Ask about this file
+                <MessageSquare size={11} />
+                Ask AI
+              </button>
+            )}
+            {content && (
+              <button
+                className="btn-icon"
+                onClick={handleCopy}
+                title="Copy file contents"
+                aria-label="Copy file contents"
+              >
+                {copied ? <Check size={13} style={{ color: "var(--success)" }} /> : <Copy size={13} />}
               </button>
             )}
           </div>
@@ -260,38 +345,70 @@ export default function FilePreview({ loadingPath, onAskAboutFile }) {
 
         {/* ── AI Summary ── */}
         {summary && (
-          <div className="flex items-start gap-3 px-4 py-3 border-b border-white/[0.06] shrink-0"
-               style={{ background: "rgba(255,255,255,0.02)" }}>
-            <span className="text-sm shrink-0 mt-0.5">🧠</span>
-            <p className="text-xs text-white/60 leading-relaxed">{summary}</p>
+          <div style={{
+            display: "flex", gap: 10, padding: "9px 12px",
+            borderBottom: "1px solid var(--border)",
+            background: "var(--accent-bg)", flexShrink: 0,
+          }}>
+            <Brain size={13} style={{ color: "var(--accent)", flexShrink: 0, marginTop: 1 }} />
+            <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.65, margin: 0 }}>
+              {summary}
+            </p>
           </div>
         )}
 
         {/* ── Selection hint ── */}
         {content && (
-          <div className="px-4 py-1.5 border-b border-white/[0.04] bg-white/[0.01] shrink-0">
-            <p className="text-[10px] text-white/20">
-              💡 Select any code to get an AI explanation
+          <div style={{
+            padding: "4px 12px", borderBottom: "1px solid var(--border-muted)",
+            background: "var(--bg-card)", flexShrink: 0,
+          }}>
+            <p style={{ fontSize: 10, color: "var(--text-subtle)", margin: 0 }}>
+              Select any code to explain it with AI
             </p>
           </div>
         )}
 
-        {/* ── Code block ── */}
+        {/* ── Code ── */}
         {content ? (
-          <div ref={codeRef}
-            className="flex-1 overflow-auto bg-[#0d1117] rounded-b-2xl
-                       scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10"
-            onMouseUp={handleMouseUp}>
-            <table ref={tableRef} className="w-full border-collapse text-xs font-mono">
+          <div
+            ref={codeRef}
+            style={{ flex: 1, overflowY: "auto", background: "var(--editor-bg)" }}
+            onMouseUp={handleMouseUp}
+          >
+            <table
+              ref={tableRef}
+              style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}
+            >
               <tbody>
                 {content.split("\n").map((line, i) => (
-                  <tr key={i} className="hover:bg-white/[0.025] transition-colors group">
-                    <td className="select-none text-right pr-3 pl-4 py-[1px] text-white/15
-                                   border-r border-white/[0.04] w-10 shrink-0
-                                   group-hover:text-white/35 transition-colors font-mono">
+                  <tr
+                    key={i}
+                    style={{ transition: "background 0.1s" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "var(--editor-line)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                  >
+                    {/* Line number */}
+                    <td style={{
+                      userSelect: "none", textAlign: "right",
+                      paddingRight: 12, paddingLeft: 14,
+                      paddingTop: 1, paddingBottom: 1,
+                      color: "var(--editor-num)",
+                      borderRight: "1px solid rgba(255,255,255,0.05)",
+                      width: 44, flexShrink: 0,
+                      fontFamily: "JetBrains Mono, monospace", fontSize: 11,
+                    }}>
                       {i + 1}
                     </td>
-                    <td className="pl-4 pr-4 py-[1px] text-white/75 whitespace-pre leading-5"
+                    {/* Code content */}
+                    <td
+                      style={{
+                        paddingLeft: 14, paddingRight: 14,
+                        paddingTop: 1, paddingBottom: 1,
+                        color: "var(--editor-text)",
+                        whiteSpace: "pre", lineHeight: 1.6,
+                        fontFamily: "JetBrains Mono, monospace",
+                      }}
                       dangerouslySetInnerHTML={{ __html: highlight(line) }}
                     />
                   </tr>
@@ -300,8 +417,10 @@ export default function FilePreview({ loadingPath, onAskAboutFile }) {
             </table>
           </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-white/30 text-sm
-                          rounded-b-2xl bg-[#0d1117]">
+          <div style={{
+            flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+            color: "var(--text-subtle)", fontSize: 13, background: "var(--editor-bg)",
+          }}>
             Binary file — no preview available.
           </div>
         )}

@@ -1,28 +1,36 @@
 ﻿import { useState } from "react";
+import { Star, Folder, LayoutGrid } from "lucide-react";
 import { useAnalysis } from "../context/AnalysisContext";
 import { getFileContent } from "../services/api";
 import ProjectTree from "./ProjectTree";
 import FilePreview from "./FilePreview";
 
 const LANG_META = {
-  Python:      { color: "#facc15", short: "PY" },
-  JavaScript:  { color: "#fde047", short: "JS" },
-  TypeScript:  { color: "#60a5fa", short: "TS" },
-  "React/JSX": { color: "#22d3ee", short: "RX" },
-  "React/TSX": { color: "#67e8f9", short: "TX" },
-  Java:        { color: "#fb923c", short: "JV" },
-  Go:          { color: "#2dd4bf", short: "GO" },
-  Rust:        { color: "#f97316", short: "RS" },
-  default:     { color: "#94a3b8", short: "??" },
+  Python:      { color: "#D97706", short: "PY" },
+  JavaScript:  { color: "#CA8A04", short: "JS" },
+  TypeScript:  { color: "#2563EB", short: "TS" },
+  "React/JSX": { color: "#0891B2", short: "RX" },
+  "React/TSX": { color: "#0891B2", short: "TX" },
+  Java:        { color: "#EA580C", short: "JV" },
+  Go:          { color: "#0D9488", short: "GO" },
+  Rust:        { color: "#C2410C", short: "RS" },
+  default:     { color: "#6B7280", short: "??" },
 };
+
+const SIDEBAR_TABS = [
+  { id: "important", label: "Key Files", icon: Star    },
+  { id: "folders",   label: "Folders",   icon: Folder  },
+  { id: "tree",      label: "Explorer",  icon: LayoutGrid },
+];
 
 export default function FileList({ onNavigateToChat }) {
   const { state, dispatch } = useAnalysis();
   const { analysisData, repoUrl, explainMode, selectedFile, fileCache } = state;
   const importantFiles  = analysisData?.important_files;
   const folderSummaries = analysisData?.folder_summaries;
-  const [explorerTab, setExplorerTab] = useState("important");
-  const [loadingPath, setLoadingPath] = useState(null);
+
+  const [explorerTab,  setExplorerTab]  = useState("important");
+  const [loadingPath,  setLoadingPath]  = useState(null);
 
   const handleFileClick = async (filePath) => {
     if (!filePath) return;
@@ -49,56 +57,136 @@ export default function FileList({ onNavigateToChat }) {
 
   const selectedPath = selectedFile?.file_path;
 
+  // Determine which tabs are available
+  const availableTabs = SIDEBAR_TABS.filter((t) => {
+    if (t.id === "important") return importantFiles?.length > 0;
+    if (t.id === "folders")   return folderSummaries?.length > 0;
+    return true;
+  });
+
+  // Fallback to tree if current tab not available
+  const activeTab = availableTabs.find((t) => t.id === explorerTab)
+    ? explorerTab
+    : availableTabs[0]?.id || "tree";
+
   return (
-    <div className="animate-slide-up flex gap-4 h-[620px]">
-      <div className="w-72 shrink-0 flex flex-col gap-3">
-        <div className="flex gap-1 bg-white/[0.03] p-0.5 rounded-xl border border-white/[0.06]">
-          {importantFiles?.length > 0 && (
-            <button onClick={() => setExplorerTab("important")}
-              className={explorerTab === "important" ? "tab-pill-active text-[10px] flex-1" : "tab-pill-inactive text-[10px] flex-1"}>
-              Key Files
-            </button>
+    <div
+      className="animate-slide-up"
+      style={{
+        display: "grid",
+        gridTemplateColumns: "220px 1fr",
+        gap: 0,
+        height: "clamp(520px, calc(100vh - 220px), 760px)",
+        background: "var(--bg-card)",
+        border: "1px solid var(--border)",
+        borderRadius: 10,
+        overflow: "hidden",
+      }}
+    >
+      {/* ─────── LEFT: Explorer Panel ─────── */}
+      <div style={{
+        display: "flex",
+        flexDirection: "column",
+        borderRight: "1px solid var(--border)",
+        background: "var(--bg-subtle)",
+        overflow: "hidden",
+      }}>
+        {/* Panel header */}
+        <div style={{
+          padding: "10px 12px 6px",
+          borderBottom: "1px solid var(--border)",
+          flexShrink: 0,
+        }}>
+          <p className="section-label" style={{ marginBottom: 8 }}>Project</p>
+          {/* Sidebar sub-tabs */}
+          {availableTabs.length > 1 && (
+            <div style={{
+              display: "flex",
+              background: "var(--bg-muted)",
+              border: "1px solid var(--border)",
+              borderRadius: 6,
+              padding: 2,
+              gap: 1,
+            }}>
+              {availableTabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setExplorerTab(tab.id)}
+                    title={tab.label}
+                    style={{
+                      flex: 1, display: "flex", alignItems: "center",
+                      justifyContent: "center", gap: 4,
+                      padding: "3px 6px", borderRadius: 4, fontSize: 10, fontWeight: 500,
+                      border: "none", cursor: "pointer", transition: "all var(--t-fast)",
+                      background: isActive ? "var(--accent)" : "transparent",
+                      color: isActive ? "#fff" : "var(--text-muted)",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    <Icon size={9} />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
           )}
-          {folderSummaries?.length > 0 && (
-            <button onClick={() => setExplorerTab("folders")}
-              className={explorerTab === "folders" ? "tab-pill-active text-[10px] flex-1" : "tab-pill-inactive text-[10px] flex-1"}>
-              Folders
-            </button>
-          )}
-          <button onClick={() => setExplorerTab("tree")}
-            className={explorerTab === "tree" ? "tab-pill-active text-[10px] flex-1" : "tab-pill-inactive text-[10px] flex-1"}>
-            Tree
-          </button>
         </div>
 
-        <div className="flex-1 overflow-hidden bg-white/[0.02] border border-white/[0.06] rounded-2xl p-2">
-          {explorerTab === "important" && importantFiles?.length > 0 && (
-            <ul className="space-y-0.5 overflow-y-auto h-full scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
+        {/* Panel content */}
+        <div style={{ flex: 1, overflow: "hidden" }}>
+
+          {/* Key Files */}
+          {activeTab === "important" && importantFiles?.length > 0 && (
+            <ul style={{
+              listStyle: "none", margin: 0, padding: "4px 4px",
+              overflowY: "auto", height: "100%",
+            }}>
               {importantFiles.map((file) => {
                 const meta = LANG_META[file.language] || LANG_META.default;
                 const isSelected = selectedPath === file.path;
                 return (
                   <li key={file.path}>
-                    <button onClick={() => handleFileClick(file.path)}
+                    <button
+                      onClick={() => handleFileClick(file.path)}
                       style={{
-                        width: "100%", display: "flex", alignItems: "center", gap: 10,
-                        padding: "7px 8px", borderRadius: 10, textAlign: "left",
-                        transition: "all 0.15s", cursor: "pointer",
-                        background: isSelected ? "rgba(124,58,237,0.08)" : "transparent",
-                        border: isSelected ? "1px solid rgba(124,58,237,0.25)" : "1px solid transparent",
+                        width: "100%", display: "flex", alignItems: "center", gap: 7,
+                        padding: "6px 8px", borderRadius: 6, textAlign: "left",
+                        cursor: "pointer", transition: "all var(--t-fast)",
+                        background: isSelected ? "var(--accent-bg)" : "transparent",
+                        border: isSelected ? "1px solid var(--accent-border)" : "1px solid transparent",
                       }}
-                      onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
-                      onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}>
-                      <span className="shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-bold font-mono"
-                        style={{ background: meta.color + "18", color: meta.color, border: "1px solid " + meta.color + "30" }}>
+                      onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "var(--bg-muted)"; }}
+                      onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
+                    >
+                      <span style={{
+                        flexShrink: 0, width: 22, height: 22, borderRadius: 5,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 8, fontWeight: 700,
+                        background: meta.color + "15",
+                        color: meta.color,
+                        border: "1px solid " + meta.color + "25",
+                      }}>
                         {meta.short}
                       </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-mono truncate transition-colors"
-                          style={{ color: isSelected ? "#C4B5FD" : "rgba(255,255,255,0.65)" }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{
+                          fontSize: 11, fontFamily: "JetBrains Mono, monospace",
+                          color: isSelected ? "var(--accent)" : "var(--text)",
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                          margin: "0 0 1px",
+                        }}>
                           {file.path.split("/").pop()}
                         </p>
-                        <p className="text-[10px] text-white/30 truncate">{file.reason}</p>
+                        <p style={{
+                          fontSize: 10, color: "var(--text-subtle)",
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                          margin: 0, lineHeight: 1.4,
+                        }}>
+                          {file.reason}
+                        </p>
                       </div>
                     </button>
                   </li>
@@ -107,33 +195,69 @@ export default function FileList({ onNavigateToChat }) {
             </ul>
           )}
 
-          {explorerTab === "folders" && folderSummaries?.length > 0 && (
-            <ul className="space-y-1 overflow-y-auto h-full scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
+          {/* Folders */}
+          {activeTab === "folders" && folderSummaries?.length > 0 && (
+            <ul style={{
+              listStyle: "none", margin: 0, padding: "4px 4px",
+              overflowY: "auto", height: "100%",
+              display: "flex", flexDirection: "column", gap: 2,
+            }}>
               {folderSummaries.map((folder) => (
                 <li key={folder.path} style={{
-                  display: "flex", gap: 10, padding: "8px 10px", borderRadius: 10,
-                  border: "1px solid rgba(255,255,255,0.06)", transition: "border-color 0.15s",
+                  display: "flex", gap: 8, padding: "8px 8px", borderRadius: 7,
+                  border: "1px solid transparent",
+                  transition: "all var(--t-fast)", cursor: "default",
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; }}>
-                  <div style={{ width: 2, background: "rgba(255,255,255,0.10)", borderRadius: 99, flexShrink: 0 }} />
-                  <div className="min-w-0">
-                    <p className="text-xs font-mono font-medium truncate" style={{ color: "#9CA3AF" }}>{folder.path}/</p>
-                    <p className="text-[10px] text-white/40 mt-0.5 leading-relaxed line-clamp-2">{folder.summary}</p>
-                    <p className="text-[10px] text-white/20 mt-0.5">{folder.file_count} files</p>
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "var(--bg-muted)";
+                  e.currentTarget.style.borderColor = "var(--border)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.borderColor = "transparent";
+                }}>
+                  <div style={{
+                    width: 2, background: "var(--accent)",
+                    borderRadius: 99, flexShrink: 0, opacity: 0.4,
+                  }} />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <p style={{
+                      fontSize: 11, fontFamily: "JetBrains Mono, monospace",
+                      color: "var(--text)", fontWeight: 500, margin: "0 0 2px",
+                    }}>
+                      {folder.path}/
+                    </p>
+                    <p style={{
+                      fontSize: 10, color: "var(--text-muted)", lineHeight: 1.4,
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      margin: 0,
+                    }}>
+                      {folder.summary}
+                    </p>
+                    <p style={{ fontSize: 10, color: "var(--text-subtle)", margin: "2px 0 0" }}>
+                      {folder.file_count} files
+                    </p>
                   </div>
                 </li>
               ))}
             </ul>
           )}
 
-          {explorerTab === "tree" && (
-            <ProjectTree onFileClick={handleFileClick} selectedPath={selectedPath} compact />
+          {/* Tree explorer */}
+          {activeTab === "tree" && (
+            <div style={{ height: "100%", padding: 0, overflow: "hidden" }}>
+              <ProjectTree
+                onFileClick={handleFileClick}
+                selectedPath={selectedPath}
+                compact
+              />
+            </div>
           )}
         </div>
       </div>
 
-      <div className="flex-1 min-w-0 border border-white/[0.06] rounded-2xl overflow-hidden bg-[#0d1117]">
+      {/* ─────── RIGHT: Code Viewer ─────── */}
+      <div style={{ overflow: "hidden", display: "flex", flexDirection: "column" }}>
         <FilePreview loadingPath={loadingPath} onAskAboutFile={handleAskAboutFile} />
       </div>
     </div>
