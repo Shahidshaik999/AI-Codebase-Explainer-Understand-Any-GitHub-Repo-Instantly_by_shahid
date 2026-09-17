@@ -4,7 +4,18 @@
 >
 > AI-powered code intelligence for developers.
 
-Paste a public GitHub URL. Get a complete AI-powered breakdown — architecture, file intelligence, RAG chat, impact analysis, git history, execution flow and system design — in under 90 seconds.
+<div align="center">
+
+### 🚀 [**Live Demo → codebase-ai.vercel.app**](https://ai-codebase-explainer-understand-an-inky.vercel.app/)
+
+Paste any public GitHub URL. Get AI-powered architecture, file intelligence, RAG chat, and more in under 90 seconds.
+
+![Codebase AI](https://img.shields.io/badge/Codebase_AI-Live-5B4BFF?style=for-the-badge)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Groq](https://img.shields.io/badge/Groq-LLM-F55036?style=for-the-badge)
+
+</div>
 
 ---
 
@@ -12,7 +23,7 @@ Paste a public GitHub URL. Get a complete AI-powered breakdown — architecture,
 
 Most developers spend days onboarding to a new codebase. Codebase AI cuts that to minutes.
 
-It clones any public GitHub repository, analyzes the code with an LLM, and gives you:
+Paste a public GitHub repository URL → get a complete AI-powered breakdown:
 
 | Feature | Description |
 |---|---|
@@ -41,41 +52,48 @@ https://github.com/user-attachments/assets/3e5b669b-9a6c-466b-a63c-7d67635fbb78
 | Frontend | React 19 + Vite + Tailwind CSS + Lucide React |
 | Visualization | React Flow |
 | State | React Context + useReducer + localStorage |
-| Backend | FastAPI (Python 3.11+) |
+| Backend | FastAPI (Python) |
 | LLM | Groq API (llama-3.1-8b-instant) |
-| Embeddings | FAISS + sentence-transformers |
+| Embeddings | FAISS vector search |
 | Git | GitPython |
 | AST | Python `ast` module |
+| Frontend Deploy | Vercel |
+| Backend Deploy | Render |
 
 ---
 
-## Quick Start
+## 🌐 Live URLs
+
+| Service | URL |
+|---|---|
+| **Frontend** | https://ai-codebase-explainer-understand-an-inky.vercel.app/ |
+| **Backend API** | https://ai-codebase-explainer-understand-any-v9wa.onrender.com |
+| **API Docs** | https://ai-codebase-explainer-understand-any-v9wa.onrender.com/docs |
+
+---
+
+## Quick Start (Local)
 
 ### Prerequisites
-
 - Python 3.11+
 - Node.js 18+
 - [Groq API key](https://console.groq.com) (free tier)
 - Git
 
 ### 1. Clone
-
 ```bash
-git clone https://github.com/your-username/codebase-ai.git
-cd codebase-ai
+git clone https://github.com/Shahidshaik999/AI-Codebase-Explainer-Understand-Any-GitHub-Repo-Instantly_by_shahid.git
+cd AI-Codebase-Explainer-Understand-Any-GitHub-Repo-Instantly_by_shahid
 ```
 
 ### 2. Backend
-
 ```bash
 cd backend
+python -m venv .venv
 
 # Windows
-python -m venv .venv
 .venv\Scripts\activate
-
 # macOS/Linux
-python -m venv .venv
 source .venv/bin/activate
 
 pip install -r requirements.txt
@@ -84,19 +102,16 @@ cp .env.example .env
 ```
 
 ### 3. Start backend
-
 ```bash
 uvicorn app.main:app --reload --port 8000
 ```
 
-API docs: http://localhost:8000/docs
-
 ### 4. Frontend
-
 ```bash
 cd frontend
 npm install
 cp .env.example .env
+# VITE_API_URL=http://localhost:8000
 npm run dev
 ```
 
@@ -107,16 +122,12 @@ Open: http://localhost:5173
 ## Environment Variables
 
 ### Backend — `backend/.env`
-
 ```env
 LLM_PROVIDER=grok
 LLM_MODEL=llama-3.1-8b-instant
-
 GROK_API_KEY=gsk_your_key_here
-OPENAI_API_KEY=
-GEMINI_API_KEY=
-
-CLONE_BASE_DIR=C:/tmp/repos
+CLONE_BASE_DIR=/tmp/repos
+FAISS_INDEX_DIR=/tmp/faiss
 MAX_FILE_SIZE_KB=100
 MAX_FILES_PER_REPO=50
 MAX_CHUNKS=15
@@ -124,7 +135,6 @@ CHUNK_SIZE_LINES=80
 ```
 
 ### Frontend — `frontend/.env`
-
 ```env
 VITE_API_URL=http://localhost:8000
 ```
@@ -144,21 +154,8 @@ VITE_API_URL=http://localhost:8000
 | POST | `/api/repo-structure` | Directory tree |
 | POST | `/api/file-content` | File content + AI summary |
 | POST | `/api/explain-code` | Explain selected code |
-| POST | `/api/search-files` | Search files |
 
-Full interactive docs: http://localhost:8000/docs
-
----
-
-## Supported LLM Providers
-
-| Provider | Config value | Notes |
-|---|---|---|
-| Groq | `grok` | Fastest, free tier |
-| OpenAI | `openai` | GPT-4o-mini recommended |
-| Google Gemini | `gemini` | gemini-1.5-flash recommended |
-
-Change `LLM_PROVIDER` in `backend/.env` to switch.
+Full interactive docs: https://ai-codebase-explainer-understand-any-v9wa.onrender.com/docs
 
 ---
 
@@ -168,4 +165,4 @@ MIT — free to use, modify, and distribute.
 
 ---
 
-Built with FastAPI · React · Groq · FAISS · React Flow · Lucide
+Built with FastAPI · React · Groq · FAISS · React Flow · Lucide · Deployed on Vercel + Render
