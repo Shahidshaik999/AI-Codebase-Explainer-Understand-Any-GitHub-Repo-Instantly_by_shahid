@@ -41,7 +41,7 @@ def _call_grok(prompt: str, system: str, model: str) -> str:
     )
     json_prompt = prompt + "\n\nIMPORTANT: Your entire response must be a single valid JSON object. No markdown, no explanation, no code fences — raw JSON only."
     response = client.chat.completions.create(
-        model=model or "llama-3.3-70b-versatile",
+        model=model or "openai/gpt-oss-20b",
         messages=[
             {"role": "system", "content": system},
             {"role": "user", "content": json_prompt},

@@ -8,7 +8,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GROK_API_KEY = os.getenv("GROK_API_KEY", "")
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "grok")  # "openai", "gemini", or "grok"
-LLM_MODEL = os.getenv("LLM_MODEL", "grok-3-mini")
+LLM_MODEL = os.getenv("LLM_MODEL", "openai/gpt-oss-20b")
 
 # Repo cloning
 CLONE_BASE_DIR = os.getenv("CLONE_BASE_DIR", "/tmp/ai_explainer_repos")
