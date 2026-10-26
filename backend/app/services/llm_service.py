@@ -4,7 +4,7 @@ import re
 from typing import Any, Dict, List, Optional
 from app.utils.config import (
     LLM_PROVIDER, LLM_MODEL,
-    OPENAI_API_KEY, GEMINI_API_KEY, GROK_API_KEY
+    OPENAI_API_KEY, GEMINI_API_KEY, GROK_API_KEY, META_API_KEY
 )
 
 logger = logging.getLogger(__name__)
@@ -29,6 +29,29 @@ def _call_openai(prompt: str, system: str, model: str) -> str:
     return response.choices[0].message.content
 
 
+def _call_meta(prompt: str, system: str, model: str) -> str:
+    """
+    Meta Llama API — OpenAI-compatible.
+    Base URL: https://api.llama.com/v1
+    Models: Llama-4-Maverick-17B-128E-Instruct-FP8, Llama-4-Scout-17B-16E-Instruct, etc.
+    """
+    from openai import OpenAI
+    client = OpenAI(
+        api_key=META_API_KEY,
+        base_url="https://api.llama.com/v1",
+    )
+    json_prompt = prompt + "\n\nIMPORTANT: Your entire response must be a single valid JSON object. No markdown, no explanation, no code fences — raw JSON only."
+    response = client.chat.completions.create(
+        model=model or "Llama-4-Maverick-17B-128E-Instruct-FP8",
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": json_prompt},
+        ],
+        temperature=0.2,
+    )
+    return response.choices[0].message.content
+
+
 def _call_grok(prompt: str, system: str, model: str) -> str:
     """
     Groq API — OpenAI-compatible, extremely fast inference.
@@ -41,7 +64,7 @@ def _call_grok(prompt: str, system: str, model: str) -> str:
     )
     json_prompt = prompt + "\n\nIMPORTANT: Your entire response must be a single valid JSON object. No markdown, no explanation, no code fences — raw JSON only."
     response = client.chat.completions.create(
-        model=model or "openai/gpt-oss-20b",
+        model=model or "llama-3.3-70b-versatile",
         messages=[
             {"role": "system", "content": system},
             {"role": "user", "content": json_prompt},
@@ -68,10 +91,12 @@ def _call_gemini(prompt: str, system: str, model: str) -> str:
 
 def _call_llm(prompt: str, system: str) -> str:
     """Route to the configured LLM provider."""
+    if LLM_PROVIDER == "meta":
+        return _call_meta(prompt, system, LLM_MODEL or "Llama-4-Maverick-17B-128E-Instruct-FP8")
     if LLM_PROVIDER == "gemini":
         return _call_gemini(prompt, system, LLM_MODEL or "gemini-1.5-flash")
     if LLM_PROVIDER == "grok":
-        return _call_grok(prompt, system, LLM_MODEL or "grok-3-mini")
+        return _call_grok(prompt, system, LLM_MODEL or "llama-3.3-70b-versatile")
     return _call_openai(prompt, system, LLM_MODEL or "gpt-4o-mini")
 
 

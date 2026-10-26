@@ -102,3 +102,13 @@ export async function explainCode(code, filePath, explainMode = "senior") {
 }
 
 export default api;
+
+/** Feature: Multi-repo comparison — hackathon differentiator powered by Meta Llama 4. */
+export async function compareRepos(repoUrlA, repoUrlB, explainMode = "senior") {
+  const { data } = await api.post("/api/compare", {
+    repo_url_a: repoUrlA,
+    repo_url_b: repoUrlB,
+    explain_mode: explainMode,
+  });
+  return data;
+}

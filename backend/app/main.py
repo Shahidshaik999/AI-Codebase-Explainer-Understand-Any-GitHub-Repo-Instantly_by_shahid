@@ -9,6 +9,7 @@ from app.routes.flow import router as flow_router
 from app.routes.system_design import router as system_design_router
 from app.routes.structure import router as structure_router
 from app.routes.file_content import router as file_content_router
+from app.routes.compare import router as compare_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -36,6 +37,7 @@ app.include_router(flow_router)
 app.include_router(system_design_router)
 app.include_router(structure_router)
 app.include_router(file_content_router)
+app.include_router(compare_router)
 
 
 @app.get("/")

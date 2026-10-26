@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import {
   LayoutDashboard, Files, GitBranch, MessageSquare,
   Zap, History, Network, Cpu, Sun, Moon,
-  GitFork, RefreshCw, ChevronRight,
+  GitFork, RefreshCw, ChevronRight, GitCompareArrows,
 } from "lucide-react";
 import { useAnalysis } from "../context/AnalysisContext";
 import { LogoHorizontal } from "../components/Logo";
@@ -15,17 +15,19 @@ import WhatIfPanel from "../components/WhatIfPanel";
 import HistoryTimeline from "../components/HistoryTimeline";
 import FlowGraph from "../components/FlowGraph";
 import SystemDesign from "../components/SystemDesign";
+import ComparePanel from "../components/ComparePanel";
 import { analyzeRepo } from "../services/api";
 
 const NAV = [
-  { id: "overview",  label: "Overview",     icon: LayoutDashboard, requiresResult: true },
-  { id: "files",     label: "Code",         icon: Files,           requiresResult: true },
-  { id: "graph",     label: "Graph",        icon: Network,         requiresGraph:  true },
-  { id: "chat",      label: "Ask AI",       icon: MessageSquare,   requiresResult: true },
-  { id: "whatif",    label: "Impact",       icon: Zap,             requiresRepo:   true },
-  { id: "history",   label: "History",      icon: History,         requiresRepo:   true },
-  { id: "flow",      label: "Flow",         icon: GitBranch,       requiresRepo:   true },
-  { id: "sysdesign", label: "Architecture", icon: Cpu,             requiresRepo:   true },
+  { id: "overview",  label: "Overview",     icon: LayoutDashboard,   requiresResult: true },
+  { id: "files",     label: "Code",         icon: Files,             requiresResult: true },
+  { id: "graph",     label: "Graph",        icon: Network,           requiresGraph:  true },
+  { id: "chat",      label: "Ask AI",       icon: MessageSquare,     requiresResult: true },
+  { id: "whatif",    label: "Impact",       icon: Zap,               requiresRepo:   true },
+  { id: "history",   label: "History",      icon: History,           requiresRepo:   true },
+  { id: "flow",      label: "Flow",         icon: GitBranch,         requiresRepo:   true },
+  { id: "sysdesign", label: "Architecture", icon: Cpu,               requiresRepo:   true },
+  { id: "compare",   label: "Compare",      icon: GitCompareArrows,  requiresRepo:   true },
 ];
 
 const STEPS = [
@@ -522,6 +524,7 @@ export default function Home({ dark, setDark }) {
               {activeTab === "history"   && <HistoryTimeline />}
               {activeTab === "flow"      && <FlowGraph />}
               {activeTab === "sysdesign" && <SystemDesign />}
+              {activeTab === "compare"   && <ComparePanel />}
             </div>
           </div>
         )}
